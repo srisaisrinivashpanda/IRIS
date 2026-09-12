@@ -12,9 +12,13 @@ from src.serving.schemas import (
     DashboardOptionsResponse,
     HistoryResponse,
     ModelInfoResponse,
+    ModelRegistryEntry,
+    ModelRegistryListResponse,
     ProjectListResponse,
     RiskRecord,
     SummaryResponse,
+    TargetRegistryEntry,
+    TargetRegistryListResponse,
 )
 
 router = APIRouter()
@@ -242,6 +246,77 @@ def get_model_info(
     repo: ServingRepository = Depends(get_serving_repository),
 ) -> dict[str, Any]:
     return repo.model_info()
+
+
+@router.get(
+    "/models",
+    response_model=ModelRegistryListResponse,
+    summary="List Production Models",
+    description="Retrieve the complete authoritative model registry including active and historical models, coverage periods, calibration metadata, and metrics.",
+)
+def get_risk_models(
+    repo: ServingRepository = Depends(get_serving_repository),
+) -> dict[str, Any]:
+    models = repo.models()
+    active = repo.active_model()
+    return {
+        "total": len(models),
+        "active_model_id": active["model_id"],
+        "models": models,
+    }
+
+
+@router.get(
+    "/models/active",
+    response_model=ModelRegistryEntry,
+    summary="Get Active Production Model",
+    description="Retrieve the currently active production model for the schedule-risk target.",
+)
+def get_active_risk_model(
+    repo: ServingRepository = Depends(get_serving_repository),
+) -> dict[str, Any]:
+    return repo.active_model()
+
+
+@router.get(
+    "/models/{model_id}",
+    response_model=ModelRegistryEntry,
+    summary="Get Model By ID",
+    description="Retrieve an exact model registry entry by model ID.",
+)
+def get_risk_model_by_id(
+    model_id: str,
+    repo: ServingRepository = Depends(get_serving_repository),
+) -> dict[str, Any]:
+    cleaned = model_id.strip()
+    if not cleaned:
+        raise HTTPException(
+            status_code=422, detail="model_id cannot be empty or whitespace"
+        )
+    model = repo.get_model(cleaned)
+    if model is None:
+        raise HTTPException(
+            status_code=404, detail=f"Model '{cleaned}' not found in registry"
+        )
+    return model
+
+
+@router.get(
+    "/targets",
+    response_model=TargetRegistryListResponse,
+    summary="List ML Target Domains",
+    description="Retrieve all registered ML target domains, distinguishing served production targets from unserved specifications.",
+)
+def get_risk_targets(
+    repo: ServingRepository = Depends(get_serving_repository),
+) -> dict[str, Any]:
+    targets = repo.targets()
+    return {
+        "total": len(targets),
+        "implemented_count": sum(1 for t in targets if t["is_served"]),
+        "targets": targets,
+    }
+
 
 
 @router.get(

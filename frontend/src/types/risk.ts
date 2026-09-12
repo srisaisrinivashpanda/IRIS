@@ -163,6 +163,78 @@ export interface ModelInfoResponse {
   models: ModelDetail[];
 }
 
+export interface ModelMetrics {
+  average_precision: number;
+  average_precision_ci: [number, number] | number[];
+  roc_auc: number;
+  brier_score?: number | null;
+  ece?: number | null;
+  evaluation_notes?: string | null;
+}
+
+export interface CalibrationGovernance {
+  status: "ACTIVE" | "UNAVAILABLE" | "UNCALIBRATED";
+  policy: string;
+  method?: string | null;
+  active_origin?: string | null;
+  slope?: number | null;
+  intercept?: number | null;
+  brier_before?: number | null;
+  brier_after?: number | null;
+}
+
+export interface ServingArtifactGovernance {
+  status: "DEPLOYED" | "NOT_DEPLOYED";
+  artifact_version: string;
+  contract_version: string;
+  database_filename: string;
+  record_count: number;
+}
+
+export interface ModelRegistryEntry {
+  model_id: string;
+  model_name: string;
+  target: "target_effective_schedule_ext_3m";
+  domain: "SCHEDULE_RISK";
+  regime: Regime;
+  model_family: string;
+  status: "ACTIVE_PRODUCTION" | "HISTORICAL_PRODUCTION" | "SPECIFICATION_ONLY" | "NOT_TRAINED" | "RETIRED";
+  is_active: boolean;
+  coverage_period: string;
+  horizon_months: number;
+  features_count: number;
+  features: string[];
+  explanation_method: ExplanationMethod;
+  calibration: CalibrationGovernance;
+  serving: ServingArtifactGovernance;
+  metrics?: ModelMetrics | null;
+  limitations: string[];
+}
+
+export interface ModelRegistryListResponse {
+  total: number;
+  active_model_id: string;
+  models: ModelRegistryEntry[];
+}
+
+export interface TargetRegistryEntry {
+  target_id: string;
+  name: string;
+  domain: "SCHEDULE_RISK" | "COST_RISK" | "PROGRESS_RISK";
+  status: "IMPLEMENTED_AND_SERVED" | "SPECIFICATION_ONLY";
+  is_served: boolean;
+  horizon_months: number;
+  description: string;
+  production_models: string[];
+}
+
+export interface TargetRegistryListResponse {
+  total: number;
+  implemented_count: number;
+  targets: TargetRegistryEntry[];
+}
+
+
 export interface RiskSummaryQueryParams {
   report_month: string;
   regime?: Regime;
