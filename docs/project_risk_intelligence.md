@@ -207,3 +207,25 @@ The response schema is defined by `ProjectRiskIntelligenceResponse`:
   - `data_availability.has_risk_assessment` is `false`.
 - If a project does not exist at all:
   - HTTP status is **`404 Not Found`**.
+
+---
+
+## 6. Frontend Integration & Project Detail Experience (PR-04)
+
+The IRIS Project Detail view consumes `GET /api/v1/projects/{project_code}/risk-intelligence` via TanStack React Query (`queryKey: ["projects", project_code, "risk-intelligence"]`):
+
+1. **Temporal Independence**:
+   - `snapshot.report_month` (e.g. `2026-07`) and `risk.report_month` (e.g. `2026-04`) are presented separately.
+   - The UI maintains this temporal boundary explicitly and never conflates them into a single timestamp.
+
+2. **Truthful No-Risk State**:
+   - When `data_availability.has_risk_assessment` is `false` (`risk: null`), the UI renders an honest unavailable state (`SCHEDULE RISK: Not assessed for this project`).
+   - It does not fabricate a 0% risk probability, a "Low Risk" badge, or synthetic model information.
+
+3. **Localized Error Handling**:
+   - Network or serving failures produce a localized alert in the risk section without breaking other Project Detail sections (identity, trajectory, milestones, expenditure).
+
+4. **Unserved Machine Learning Domains**:
+   - Cost Overrun Risk and Progress Stagnation Risk are truthfully reported as `DATA PENDING` in accordance with `data_availability.cost_risk_ml_served: false` and `data_availability.progress_stagnation_ml_served: false`.
+   - Factual signals (cost revision events, schedule extension counts) are kept visually and semantically distinct from machine learning predictions.
+
