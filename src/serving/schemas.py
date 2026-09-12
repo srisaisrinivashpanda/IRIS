@@ -167,6 +167,7 @@ class ModelDetail(StrictModel):
         "LOGISTIC_COEFFICIENT_TIMES_TRANSFORMED_VALUE",
     ]
     calibration_policy: str
+    coverage_period: str | None = None
     status: Literal["READY", "NOT_TRAINED", "MODEL_NOT_DEPLOYED"] = "READY"
 
 

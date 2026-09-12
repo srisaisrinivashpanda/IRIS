@@ -24,11 +24,28 @@ Regime = Literal["LEGACY", "MODERN"]
 
 
 def _validate_month(value: str) -> str:
-    if not MONTH_PATTERN.fullmatch(value):
+    cleaned = value.strip()
+    if not MONTH_PATTERN.fullmatch(cleaned):
         raise HTTPException(
             status_code=422, detail="report_month must use a valid YYYY-MM value"
         )
-    return value
+    return cleaned
+
+
+def _validate_project_code(value: str) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise HTTPException(
+            status_code=422, detail="project_code cannot be empty or whitespace"
+        )
+    return cleaned
+
+
+def _normalize_filter(value: str | None) -> str | None:
+    if value is None:
+        return None
+    stripped = value.strip()
+    return stripped if stripped else None
 
 
 @router.get(
@@ -69,13 +86,17 @@ def get_risk_summary(
 ) -> dict[str, Any]:
     month = _validate_month(report_month)
     normalized_search = search.strip() if search and search.strip() else None
+    norm_sector = _normalize_filter(sector)
+    norm_agency = _normalize_filter(agency)
+    norm_ministry = _normalize_filter(ministry)
+    norm_state = _normalize_filter(state)
     rows = repo.month_scores(
         month,
         regime,
-        sector=sector,
-        agency=agency,
-        ministry=ministry,
-        state=state,
+        sector=norm_sector,
+        agency=norm_agency,
+        ministry=norm_ministry,
+        state=norm_state,
         search=normalized_search,
     )
     if not rows:
@@ -124,10 +145,10 @@ def get_risk_summary(
             "regime": regime,
             "min_risk_probability": None,
             "max_risk_probability": None,
-            "sector": sector,
-            "agency": agency,
-            "ministry": ministry,
-            "state": state,
+            "sector": norm_sector,
+            "agency": norm_agency,
+            "ministry": norm_ministry,
+            "state": norm_state,
             "search": normalized_search,
         },
         "project_count": len(rows),
@@ -172,15 +193,19 @@ def list_risk_projects(
         )
 
     normalized_search = search.strip() if search and search.strip() else None
+    norm_sector = _normalize_filter(sector)
+    norm_agency = _normalize_filter(agency)
+    norm_ministry = _normalize_filter(ministry)
+    norm_state = _normalize_filter(state)
     total, items = repo.list_records(
         report_month=month,
         regime=regime,
         min_probability=min_risk_probability,
         max_probability=max_risk_probability,
-        sector=sector,
-        agency=agency,
-        ministry=ministry,
-        state=state,
+        sector=norm_sector,
+        agency=norm_agency,
+        ministry=norm_ministry,
+        state=norm_state,
         search=normalized_search,
         limit=page_size,
         offset=(page - 1) * page_size,
@@ -194,10 +219,10 @@ def list_risk_projects(
             "regime": regime,
             "min_risk_probability": min_risk_probability,
             "max_risk_probability": max_risk_probability,
-            "sector": sector,
-            "agency": agency,
-            "ministry": ministry,
-            "state": state,
+            "sector": norm_sector,
+            "agency": norm_agency,
+            "ministry": norm_ministry,
+            "state": norm_state,
             "search": normalized_search,
         },
         "page": page,
@@ -230,7 +255,8 @@ def get_project_risk_record(
     report_month: Annotated[str, Query(description="Evaluation month as YYYY-MM")],
     repo: ServingRepository = Depends(get_serving_repository),
 ) -> dict[str, Any]:
-    record = repo.get_record(project_code, _validate_month(report_month))
+    valid_code = _validate_project_code(project_code)
+    record = repo.get_record(valid_code, _validate_month(report_month))
     if record is None:
         raise HTTPException(status_code=404, detail="Project-month risk record not found")
     return record
@@ -247,11 +273,12 @@ def get_project_risk_history(
     regime: Regime | None = None,
     repo: ServingRepository = Depends(get_serving_repository),
 ) -> dict[str, Any]:
-    records = repo.history(project_code, regime)
+    valid_code = _validate_project_code(project_code)
+    records = repo.history(valid_code, regime)
     if not records:
         raise HTTPException(status_code=404, detail="Project risk history not found")
     return {
-        "project_code": project_code,
+        "project_code": valid_code,
         "regime_filter": regime,
         "count": len(records),
         "items": records,

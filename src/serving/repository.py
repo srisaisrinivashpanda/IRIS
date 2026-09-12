@@ -55,6 +55,7 @@ class ServingRepository:
             f"file:{self.database_path.as_posix()}?mode=ro", uri=True
         )
         connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA query_only = ON")
         return connection
 
     def health(self) -> dict[str, Any]:
@@ -83,6 +84,7 @@ class ServingRepository:
                     "features_count": 18,
                     "explanation_method": "CATBOOST_NATIVE_TREESHAP",
                     "calibration_policy": "Uncalibrated (ranking score matches operational probability)",
+                    "coverage_period": "2023-01 through 2025-06",
                     "status": "READY",
                 },
                 {
@@ -94,6 +96,7 @@ class ServingRepository:
                     "features_count": 12,
                     "explanation_method": "LOGISTIC_COEFFICIENT_TIMES_TRANSFORMED_VALUE",
                     "calibration_policy": "Temporal Platt Scaling (active on 2026-04)",
+                    "coverage_period": "2025-07 through 2026-07",
                     "status": "READY",
                 },
             ],
@@ -125,7 +128,7 @@ class ServingRepository:
             ("ministry = ?", ministry),
             ("state = ?", state),
         ):
-            if value is not None:
+            if value is not None and value != "":
                 clauses.append(clause)
                 values.append(value)
         if min_probability is not None:

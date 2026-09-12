@@ -25,11 +25,28 @@ Regime = Literal["LEGACY", "MODERN"]
 
 
 def _month(value: str) -> str:
-    if not MONTH_PATTERN.fullmatch(value):
+    cleaned = value.strip()
+    if not MONTH_PATTERN.fullmatch(cleaned):
         raise HTTPException(
             status_code=422, detail="report_month must use a valid YYYY-MM value"
         )
-    return value
+    return cleaned
+
+
+def _validate_project_code(value: str) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise HTTPException(
+            status_code=422, detail="project_code cannot be empty or whitespace"
+        )
+    return cleaned
+
+
+def _normalize_filter(value: str | None) -> str | None:
+    if value is None:
+        return None
+    stripped = value.strip()
+    return stripped if stripped else None
 
 
 def create_app(
@@ -85,16 +102,21 @@ def create_app(
                 status_code=422,
                 detail="min_risk_probability cannot exceed max_risk_probability",
             )
+        normalized_search = search.strip() if search and search.strip() else None
+        norm_sector = _normalize_filter(sector)
+        norm_agency = _normalize_filter(agency)
+        norm_ministry = _normalize_filter(ministry)
+        norm_state = _normalize_filter(state)
         total, items = store().list_records(
             report_month=month,
             regime=regime,
             min_probability=min_risk_probability,
             max_probability=max_risk_probability,
-            sector=sector,
-            agency=agency,
-            ministry=ministry,
-            state=state,
-            search=search.strip() if search and search.strip() else None,
+            sector=norm_sector,
+            agency=norm_agency,
+            ministry=norm_ministry,
+            state=norm_state,
+            search=normalized_search,
             limit=page_size,
             offset=(page - 1) * page_size,
         )
@@ -106,11 +128,11 @@ def create_app(
                 "regime": regime,
                 "min_risk_probability": min_risk_probability,
                 "max_risk_probability": max_risk_probability,
-                "sector": sector,
-                "agency": agency,
-                "ministry": ministry,
-                "state": state,
-                "search": search.strip() if search and search.strip() else None,
+                "sector": norm_sector,
+                "agency": norm_agency,
+                "ministry": norm_ministry,
+                "state": norm_state,
+                "search": normalized_search,
             },
             "page": page,
             "page_size": page_size,
@@ -139,18 +161,20 @@ def create_app(
         project_code: str,
         report_month: Annotated[str, Query(description="Evaluation month as YYYY-MM")],
     ) -> dict[str, Any]:
-        record = store().get_record(project_code, _month(report_month))
+        valid_code = _validate_project_code(project_code)
+        record = store().get_record(valid_code, _month(report_month))
         if record is None:
             raise HTTPException(status_code=404, detail="Project-month risk record not found")
         return record
 
     @app.get("/risk/project/{project_code}/history", response_model=HistoryResponse)
     def history(project_code: str, regime: Regime | None = None) -> dict[str, Any]:
-        records = store().history(project_code, regime)
+        valid_code = _validate_project_code(project_code)
+        records = store().history(valid_code, regime)
         if not records:
             raise HTTPException(status_code=404, detail="Project risk history not found")
         return {
-            "project_code": project_code,
+            "project_code": valid_code,
             "regime_filter": regime,
             "count": len(records),
             "items": records,
@@ -169,13 +193,17 @@ def create_app(
     ) -> dict[str, Any]:
         month = _month(report_month)
         normalized_search = search.strip() if search and search.strip() else None
+        norm_sector = _normalize_filter(sector)
+        norm_agency = _normalize_filter(agency)
+        norm_ministry = _normalize_filter(ministry)
+        norm_state = _normalize_filter(state)
         rows = store().month_scores(
             month,
             regime,
-            sector=sector,
-            agency=agency,
-            ministry=ministry,
-            state=state,
+            sector=norm_sector,
+            agency=norm_agency,
+            ministry=norm_ministry,
+            state=norm_state,
             search=normalized_search,
         )
         if not rows:
