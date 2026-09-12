@@ -16,6 +16,7 @@ vi.mock("@/api/projects.ts", () => ({
   fetchProjectTrajectory: vi.fn(),
   fetchCostRevisions: vi.fn(),
   fetchScheduleExtensions: vi.fn(),
+  fetchProjectRiskIntelligence: vi.fn(),
 }));
 
 describe("ProjectDetailPage", () => {
@@ -180,6 +181,87 @@ describe("ProjectDetailPage", () => {
       latest_original_completion_date: "2026-03",
       latest_revised_completion_date: "2026-09",
     });
+
+    vi.mocked(projectsApi.fetchProjectRiskIntelligence).mockResolvedValue({
+      project: {
+        project_code: "705635",
+        project_name: "TRIVANDRUM — KANYAKUMARI HIGHWAY",
+        agency: "NHAI",
+        ministry: "MoRTH",
+        sector: "Roads & Highways",
+        state: "Kerala",
+        legacy_ocms_code: null,
+        pmgid: null,
+      },
+      snapshot: {
+        report_month: "2026-07",
+        physical_progress: 64.2,
+        financial_progress: 64.1,
+        cumulative_expenditure: 2210,
+        original_cost: 3450,
+        revised_cost: null,
+        approval_date: "2023-01",
+        start_date: "2023-03",
+        original_completion_date: "2026-03",
+        revised_completion_date: "2026-09",
+      },
+      risk: {
+        risk_probability: 0.3842,
+        raw_probability: 0.3211,
+        risk_rank: 42,
+        risk_percentile: 0.825,
+        population_size: 1625,
+        report_month: "2026-04",
+        regime: "MODERN",
+        model_id: "logistic_static_only__unweighted",
+        target: "target_effective_schedule_ext_3m",
+        calibration_active: true,
+      },
+      model: {
+        model_id: "logistic_static_only__unweighted",
+        target: "target_effective_schedule_ext_3m",
+        model_family: "L2-Regularized Logistic Regression (C=1.0)",
+        status: "ACTIVE_PRODUCTION",
+        is_active: true,
+        coverage_period: "2025-07 through 2026-07",
+        calibration_policy: "Temporal Platt scaling active from origin 2026-04",
+        explanation_method: "LOGISTIC_COEFFICIENT_TIMES_TRANSFORMED_VALUE",
+      },
+      history: [],
+      drivers: {
+        top_positive: [],
+        top_negative: [],
+        strongest_drivers: [],
+      },
+      signals: {
+        cost_revised: false,
+        schedule_revised: true,
+        cost_revision_ratio: null,
+        cost_revision_count: 0,
+        schedule_extension_count: 1,
+        reporting_months_count: 13,
+        first_reported_month: "2025-07",
+        latest_reported_month: "2026-07",
+      },
+      recent_changes: {
+        has_prior_observation: true,
+        prior_report_month: "2026-06",
+        physical_progress_delta: 2.4,
+        expenditure_delta: 120,
+        revised_cost_delta: null,
+        completion_date_changed: false,
+      },
+      data_availability: {
+        has_project_data: true,
+        has_risk_assessment: true,
+        has_risk_history: false,
+        has_drivers: false,
+        snapshot_report_month: "2026-07",
+        risk_report_month: "2026-04",
+        cost_risk_ml_served: false,
+        progress_stagnation_ml_served: false,
+      },
+    });
   });
 
   it("renders project detail header, snapshot metrics, trajectory, and all sections", async () => {
@@ -240,6 +322,17 @@ describe("ProjectDetailPage", () => {
     expect(screen.getByText("BUILT FOR AUDITABILITY.")).toBeInTheDocument();
     expect(screen.getByText("REPORT_2026_07.pdf")).toBeInTheDocument();
     expect(screen.getByText("table6-eight-column-v1")).toBeInTheDocument();
+
+    // Schedule Risk Intelligence Section
+    expect(projectsApi.fetchProjectRiskIntelligence).toHaveBeenCalledWith("705635");
+    expect(screen.getByText("SCHEDULE RISK INTELLIGENCE.")).toBeInTheDocument();
+    expect(screen.getByText("CURRENT SCHEDULE RISK")).toBeInTheDocument();
+    expect(screen.getByText("38.4%")).toBeInTheDocument();
+    expect(screen.getByText("#42")).toBeInTheDocument();
+    expect(screen.getByText("82.5%")).toBeInTheDocument();
+    expect(screen.getByText("MODERN REGIME")).toBeInTheDocument();
+    expect(screen.getByText("CALIBRATION ACTIVE")).toBeInTheDocument();
+    expect(screen.getByText("L2-Regularized Logistic Regression (C=1.0)")).toBeInTheDocument();
 
     // Section 07: Navigation
     expect(screen.getByText("← BACK TO PROJECTS")).toBeInTheDocument();
@@ -370,6 +463,52 @@ describe("ProjectDetailPage", () => {
       latest_revised_completion_date: null,
     });
 
+    vi.mocked(projectsApi.fetchProjectRiskIntelligence).mockResolvedValue({
+      project: {
+        project_code: "999999",
+        project_name: "UNPOPULATED METRIC PROJECT",
+        agency: null,
+        ministry: null,
+        sector: null,
+        state: null,
+        legacy_ocms_code: null,
+        pmgid: null,
+      },
+      snapshot: null,
+      risk: null,
+      model: null,
+      history: [],
+      drivers: { top_positive: [], top_negative: [], strongest_drivers: [] },
+      signals: {
+        cost_revised: false,
+        schedule_revised: false,
+        cost_revision_ratio: null,
+        cost_revision_count: 0,
+        schedule_extension_count: 0,
+        reporting_months_count: 1,
+        first_reported_month: "2026-07",
+        latest_reported_month: "2026-07",
+      },
+      recent_changes: {
+        has_prior_observation: false,
+        prior_report_month: null,
+        physical_progress_delta: null,
+        expenditure_delta: null,
+        revised_cost_delta: null,
+        completion_date_changed: false,
+      },
+      data_availability: {
+        has_project_data: true,
+        has_risk_assessment: false,
+        has_risk_history: false,
+        has_drivers: false,
+        snapshot_report_month: "2026-07",
+        risk_report_month: null,
+        cost_risk_ml_served: false,
+        progress_stagnation_ml_served: false,
+      },
+    });
+
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={["/projects/999999"]}>
@@ -385,6 +524,7 @@ describe("ProjectDetailPage", () => {
       expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(4);
       expect(screen.getByText("NO SCHEDULE EXTENSION EVENTS RECORDED IN SOURCE DATA")).toBeInTheDocument();
       expect(screen.getByText("NO OBSERVATION RECORDS RECORDED")).toBeInTheDocument();
+      expect(screen.getByText("NOT ASSESSED FOR THIS PROJECT")).toBeInTheDocument();
     });
   });
 });
