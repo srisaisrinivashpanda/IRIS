@@ -7,12 +7,14 @@ import {
   fetchProjectTrajectory,
   fetchCostRevisions,
   fetchScheduleExtensions,
+  fetchProjectRiskIntelligence,
 } from "@/api/projects.ts";
 import { ProjectDetailHeader } from "@/components/project-detail/ProjectDetailHeader.tsx";
 import { LatestSnapshotStrip } from "@/components/project-detail/LatestSnapshotStrip.tsx";
 import { ProjectTrajectorySection } from "@/components/project-detail/ProjectTrajectorySection.tsx";
 import { ScheduleMovementSection } from "@/components/project-detail/ScheduleMovementSection.tsx";
 import { ExpenditureTrajectorySection } from "@/components/project-detail/ExpenditureTrajectorySection.tsx";
+import { ProjectRiskIntelligenceSection } from "@/components/project-detail/ProjectRiskIntelligenceSection.tsx";
 import { ProjectSignalsSection } from "@/components/project-detail/ProjectSignalsSection.tsx";
 import { SourceObservationTable } from "@/components/project-detail/SourceObservationTable.tsx";
 import { ProjectProvenanceSection } from "@/components/project-detail/ProjectProvenanceSection.tsx";
@@ -70,6 +72,16 @@ export const ProjectDetailPage: React.FC = () => {
   } = useQuery({
     queryKey: ["scheduleExtensions", code],
     queryFn: () => fetchScheduleExtensions(code),
+    enabled: Boolean(code),
+  });
+
+  const {
+    data: riskIntelligence,
+    isLoading: isRiskLoading,
+    error: riskError,
+  } = useQuery({
+    queryKey: ["projects", code, "risk-intelligence"],
+    queryFn: () => fetchProjectRiskIntelligence(code),
     enabled: Boolean(code),
   });
 
@@ -154,6 +166,15 @@ export const ProjectDetailPage: React.FC = () => {
           costData={costRevisions}
           snapshot={snapshot}
           trajectoryData={trajectory}
+        />
+
+        {/* Schedule Risk Intelligence Section */}
+        <ProjectRiskIntelligenceSection
+          riskIntelligence={riskIntelligence}
+          isLoading={isRiskLoading}
+          error={riskError as Error | null}
+          projectCode={code}
+          projectSnapshotMonth={snapshot?.report_month}
         />
 
         {/* Section 04: Project Signals */}
