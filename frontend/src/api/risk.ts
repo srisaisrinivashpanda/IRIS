@@ -7,12 +7,15 @@ import type {
   DashboardOptionsResponse,
   HistoryResponse,
   ModelInfoResponse,
+  ModelRegistryEntry,
+  ModelRegistryListResponse,
   ProjectListResponse,
   Regime,
   RiskListQueryParams,
   RiskRecord,
   RiskSummaryQueryParams,
   SummaryResponse,
+  TargetRegistryListResponse,
 } from "@/types/risk.ts";
 
 /**
@@ -87,3 +90,38 @@ export async function fetchProjectRiskHistory(projectCode: string, regime?: Regi
     params: { regime },
   });
 }
+
+/**
+ * Retrieve complete model registry including active and historical models.
+ */
+export async function fetchRiskModels(): Promise<ModelRegistryListResponse> {
+  return apiClient<ModelRegistryListResponse>(`${RISK_BASE_URL}/models`);
+}
+
+/**
+ * Retrieve the currently active production model.
+ */
+export async function fetchActiveRiskModel(): Promise<ModelRegistryEntry> {
+  return apiClient<ModelRegistryEntry>(`${RISK_BASE_URL}/models/active`);
+}
+
+/**
+ * Retrieve exact model registry entry by model ID.
+ */
+export async function fetchRiskModel(modelId: string): Promise<ModelRegistryEntry> {
+  return apiClient<ModelRegistryEntry>(`${RISK_BASE_URL}/models/${encodeURIComponent(modelId.trim())}`);
+}
+
+/**
+ * Retrieve registered ML target domains and implementation statuses.
+ */
+export async function fetchRiskTargets(): Promise<TargetRegistryListResponse> {
+  return apiClient<TargetRegistryListResponse>(`${RISK_BASE_URL}/targets`);
+}
+
+// Aliases matching alternative naming conventions
+export const getRiskModels = fetchRiskModels;
+export const getActiveRiskModel = fetchActiveRiskModel;
+export const getRiskModel = fetchRiskModel;
+export const getRiskTargets = fetchRiskTargets;
+

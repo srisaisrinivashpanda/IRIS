@@ -14,9 +14,13 @@ from src.serving.schemas import (
     HealthResponse,
     HistoryResponse,
     ModelInfoResponse,
+    ModelRegistryEntry,
+    ModelRegistryListResponse,
     ProjectListResponse,
     RiskRecord,
     SummaryResponse,
+    TargetRegistryEntry,
+    TargetRegistryListResponse,
 )
 
 
@@ -155,6 +159,44 @@ def create_app(
     @app.get("/risk/model-info", response_model=ModelInfoResponse)
     def model_info() -> dict[str, Any]:
         return store().model_info()
+
+    @app.get("/risk/models", response_model=ModelRegistryListResponse)
+    def models() -> dict[str, Any]:
+        models_list = store().models()
+        active = store().active_model()
+        return {
+            "total": len(models_list),
+            "active_model_id": active["model_id"],
+            "models": models_list,
+        }
+
+    @app.get("/risk/models/active", response_model=ModelRegistryEntry)
+    def active_model() -> dict[str, Any]:
+        return store().active_model()
+
+    @app.get("/risk/models/{model_id}", response_model=ModelRegistryEntry)
+    def model_by_id(model_id: str) -> dict[str, Any]:
+        cleaned = model_id.strip()
+        if not cleaned:
+            raise HTTPException(
+                status_code=422, detail="model_id cannot be empty or whitespace"
+            )
+        model = store().get_model(cleaned)
+        if model is None:
+            raise HTTPException(
+                status_code=404, detail=f"Model '{cleaned}' not found in registry"
+            )
+        return model
+
+    @app.get("/risk/targets", response_model=TargetRegistryListResponse)
+    def targets() -> dict[str, Any]:
+        targets_list = store().targets()
+        return {
+            "total": len(targets_list),
+            "implemented_count": sum(1 for t in targets_list if t["is_served"]),
+            "targets": targets_list,
+        }
+
 
     @app.get("/risk/project/{project_code}", response_model=RiskRecord)
     def project(
