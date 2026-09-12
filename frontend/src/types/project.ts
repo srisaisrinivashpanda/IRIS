@@ -195,3 +195,119 @@ export interface ProjectListQueryParams {
   sort_by?: SortByFields;
   sort_order?: SortOrder;
 }
+
+// ---------------------------------------------------------------------------
+// Project Risk Intelligence Governance Types
+// ---------------------------------------------------------------------------
+
+import type { Contributor } from "./risk.ts";
+
+export interface ProjectIntelligenceIdentity {
+  project_code: string;
+  project_name: string;
+  agency: string | null;
+  ministry: string | null;
+  sector: string | null;
+  state: string | null;
+  legacy_ocms_code: string | null;
+  pmgid: string | null;
+}
+
+export interface ProjectIntelligenceSnapshot {
+  report_month: string;
+  physical_progress: number | null;
+  financial_progress: number | null;
+  cumulative_expenditure: number | null;
+  original_cost: number | null;
+  revised_cost: number | null;
+  approval_date: string | null;
+  start_date: string | null;
+  original_completion_date: string | null;
+  revised_completion_date: string | null;
+}
+
+export interface ProjectIntelligenceRisk {
+  risk_probability: number;
+  raw_probability: number;
+  risk_rank: number;
+  risk_percentile: number;
+  population_size: number;
+  report_month: string;
+  regime: "LEGACY" | "MODERN";
+  model_id: string;
+  target: "target_effective_schedule_ext_3m";
+  calibration_active: boolean;
+}
+
+export interface ProjectIntelligenceModelGovernance {
+  model_id: string;
+  target: string;
+  model_family: string;
+  status: string;
+  is_active: boolean;
+  coverage_period: string;
+  calibration_policy?: string | null;
+  explanation_method?: string | null;
+}
+
+export interface ProjectRiskHistoryPoint {
+  report_month: string;
+  risk_probability: number;
+  raw_probability: number;
+  risk_rank: number;
+  risk_percentile: number;
+  population_size: number;
+  regime: "LEGACY" | "MODERN";
+  model_id: string;
+  calibration_active: boolean;
+}
+
+export interface ProjectRiskDrivers {
+  top_positive: Contributor[];
+  top_negative: Contributor[];
+  strongest_drivers: Contributor[];
+}
+
+export interface ProjectSignals {
+  cost_revised: boolean;
+  schedule_revised: boolean;
+  cost_revision_ratio: number | null;
+  cost_revision_count: number;
+  schedule_extension_count: number;
+  reporting_months_count: number;
+  first_reported_month: string;
+  latest_reported_month: string;
+}
+
+export interface ProjectRecentChanges {
+  has_prior_observation: boolean;
+  prior_report_month: string | null;
+  physical_progress_delta: number | null;
+  expenditure_delta: number | null;
+  revised_cost_delta: number | null;
+  completion_date_changed: boolean;
+}
+
+export interface ProjectDataAvailability {
+  has_project_data: boolean;
+  has_risk_assessment: boolean;
+  has_risk_history: boolean;
+  has_drivers: boolean;
+  snapshot_report_month: string | null;
+  risk_report_month: string | null;
+  cost_risk_ml_served: boolean;
+  progress_stagnation_ml_served: boolean;
+}
+
+export interface ProjectRiskIntelligenceResponse {
+  project: ProjectIntelligenceIdentity;
+  snapshot: ProjectIntelligenceSnapshot | null;
+  risk: ProjectIntelligenceRisk | null;
+  model: ProjectIntelligenceModelGovernance | null;
+  history: ProjectRiskHistoryPoint[];
+  drivers: ProjectRiskDrivers;
+  signals: ProjectSignals;
+  recent_changes: ProjectRecentChanges;
+  data_availability: ProjectDataAvailability;
+}
+

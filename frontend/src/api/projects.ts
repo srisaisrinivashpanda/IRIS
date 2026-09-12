@@ -10,6 +10,7 @@ import type {
   ProjectDetailResponse,
   ProjectListQueryParams,
   ProjectMonthObservationRead,
+  ProjectRiskIntelligenceResponse,
   ProjectScheduleExtensionsResponse,
   ProjectTrajectoryResponse,
   QuickSearchResult,
@@ -141,3 +142,15 @@ export async function fetchScheduleExtensions(projectCode: string): Promise<Proj
     `${API_BASE_URL}/projects/${encodeURIComponent(projectCode)}/schedule-extensions`
   );
 }
+
+/**
+ * Retrieve unified Project Risk Intelligence response by canonical project code.
+ */
+export async function fetchProjectRiskIntelligence(
+  projectCode: string
+): Promise<ProjectRiskIntelligenceResponse> {
+  return apiClient<ProjectRiskIntelligenceResponse>(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectCode.trim())}/risk-intelligence`
+  );
+}
+
