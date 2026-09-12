@@ -178,3 +178,84 @@ class ModelInfoResponse(StrictModel):
     status: Literal["READY", "NOT_TRAINED", "MODEL_NOT_DEPLOYED"] = "READY"
     models: list[ModelDetail]
 
+
+class ModelMetrics(StrictModel):
+    average_precision: float
+    average_precision_ci: list[float]
+    roc_auc: float
+    brier_score: float | None = None
+    ece: float | None = None
+    evaluation_notes: str | None = None
+
+
+class CalibrationGovernance(StrictModel):
+    status: Literal["ACTIVE", "UNAVAILABLE", "UNCALIBRATED"]
+    policy: str
+    method: str | None = None
+    active_origin: str | None = None
+    slope: float | None = None
+    intercept: float | None = None
+    brier_before: float | None = None
+    brier_after: float | None = None
+
+
+class ServingArtifactGovernance(StrictModel):
+    status: Literal["DEPLOYED", "NOT_DEPLOYED"]
+    artifact_version: str
+    contract_version: str
+    database_filename: str
+    record_count: int = Field(ge=0)
+
+
+class ModelRegistryEntry(StrictModel):
+    model_id: str
+    model_name: str
+    target: Literal["target_effective_schedule_ext_3m"]
+    domain: Literal["SCHEDULE_RISK"]
+    regime: Literal["LEGACY", "MODERN"]
+    model_family: str
+    status: Literal[
+        "ACTIVE_PRODUCTION",
+        "HISTORICAL_PRODUCTION",
+        "SPECIFICATION_ONLY",
+        "NOT_TRAINED",
+        "RETIRED",
+    ]
+    is_active: bool
+    coverage_period: str
+    horizon_months: int = 3
+    features_count: int = Field(ge=0)
+    features: list[str]
+    explanation_method: Literal[
+        "CATBOOST_NATIVE_TREESHAP",
+        "LOGISTIC_COEFFICIENT_TIMES_TRANSFORMED_VALUE",
+    ]
+    calibration: CalibrationGovernance
+    serving: ServingArtifactGovernance
+    metrics: ModelMetrics | None = None
+    limitations: list[str] = Field(default_factory=list)
+
+
+class ModelRegistryListResponse(StrictModel):
+    total: int = Field(ge=0)
+    active_model_id: str
+    models: list[ModelRegistryEntry]
+
+
+class TargetRegistryEntry(StrictModel):
+    target_id: str
+    name: str
+    domain: Literal["SCHEDULE_RISK", "COST_RISK", "PROGRESS_RISK"]
+    status: Literal["IMPLEMENTED_AND_SERVED", "SPECIFICATION_ONLY"]
+    is_served: bool
+    horizon_months: int = 3
+    description: str
+    production_models: list[str] = Field(default_factory=list)
+
+
+class TargetRegistryListResponse(StrictModel):
+    total: int = Field(ge=0)
+    implemented_count: int = Field(ge=0)
+    targets: list[TargetRegistryEntry]
+
+

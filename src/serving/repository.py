@@ -10,6 +10,12 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from src.serving.builder import DATABASE_NAME, MANIFEST_NAME, sha256
+from src.serving.registry import (
+    get_active_model,
+    get_model_by_id,
+    get_model_registry,
+    get_target_registry,
+)
 
 
 RECORD_COLUMNS = (
@@ -69,6 +75,8 @@ class ServingRepository:
         }
 
     def model_info(self) -> dict[str, Any]:
+        legacy = get_model_by_id("catboost_full_v1__unweighted")
+        modern = get_model_by_id("logistic_static_only__unweighted")
         return {
             "serving_artifact_version": self.manifest["serving_artifact_version"],
             "target": self.manifest["target"],
@@ -77,30 +85,47 @@ class ServingRepository:
             "models": [
                 {
                     "regime": "LEGACY",
-                    "model_id": "catboost_full_v1__unweighted",
-                    "family": "Gradient Boosted Decision Trees (CatBoost)",
+                    "model_id": legacy["model_id"] if legacy else "catboost_full_v1__unweighted",
+                    "family": legacy["model_family"] if legacy else "Gradient Boosted Decision Trees (CatBoost)",
                     "target": "target_effective_schedule_ext_3m",
                     "horizon_months": 3,
-                    "features_count": 18,
-                    "explanation_method": "CATBOOST_NATIVE_TREESHAP",
+                    "features_count": legacy["features_count"] if legacy else 18,
+                    "explanation_method": legacy["explanation_method"] if legacy else "CATBOOST_NATIVE_TREESHAP",
                     "calibration_policy": "Uncalibrated (ranking score matches operational probability)",
-                    "coverage_period": "2023-01 through 2025-06",
+                    "coverage_period": legacy["coverage_period"] if legacy else "2023-01 through 2025-06",
                     "status": "READY",
                 },
                 {
                     "regime": "MODERN",
-                    "model_id": "logistic_static_only__unweighted",
-                    "family": "L2-Regularized Logistic Regression",
+                    "model_id": modern["model_id"] if modern else "logistic_static_only__unweighted",
+                    "family": modern["model_family"] if modern else "L2-Regularized Logistic Regression",
                     "target": "target_effective_schedule_ext_3m",
                     "horizon_months": 3,
-                    "features_count": 12,
-                    "explanation_method": "LOGISTIC_COEFFICIENT_TIMES_TRANSFORMED_VALUE",
+                    "features_count": modern["features_count"] if modern else 12,
+                    "explanation_method": modern["explanation_method"] if modern else "LOGISTIC_COEFFICIENT_TIMES_TRANSFORMED_VALUE",
                     "calibration_policy": "Temporal Platt Scaling (active on 2026-04)",
-                    "coverage_period": "2025-07 through 2026-07",
+                    "coverage_period": modern["coverage_period"] if modern else "2025-07 through 2026-07",
                     "status": "READY",
                 },
             ],
         }
+
+    def models(self) -> list[dict[str, Any]]:
+        """Return full authoritative model registry."""
+        return get_model_registry()
+
+    def active_model(self) -> dict[str, Any]:
+        """Return the currently active production model."""
+        return get_active_model()
+
+    def get_model(self, model_id: str) -> dict[str, Any] | None:
+        """Return exact model registry entry or None."""
+        return get_model_by_id(model_id)
+
+    def targets(self) -> list[dict[str, Any]]:
+        """Return ML target domain registry."""
+        return get_target_registry()
+
 
 
     @staticmethod
