@@ -1,7 +1,17 @@
-"""Pydantic schemas module."""
-
 from backend.app.schemas.common import ApiResponse, ErrorDetail, ErrorResponse
 from backend.app.schemas.health import AppStatus, DatabaseStatus, HealthResponse
+from backend.app.schemas.project_intelligence import (
+    ProjectDataAvailability,
+    ProjectIntelligenceIdentity,
+    ProjectIntelligenceModelGovernance,
+    ProjectIntelligenceRisk,
+    ProjectIntelligenceSnapshot,
+    ProjectRecentChanges,
+    ProjectRiskDrivers,
+    ProjectRiskHistoryPoint,
+    ProjectRiskIntelligenceResponse,
+    ProjectSignals,
+)
 from backend.app.schemas.project_month import ProjectMonthObservationRead
 from backend.app.schemas.projects import (
     CostRevisionPoint,
@@ -31,9 +41,19 @@ __all__ = [
     "HealthResponse",
     "PaginatedProjectsResponse",
     "ProjectCostRevisionsResponse",
+    "ProjectDataAvailability",
     "ProjectDetailResponse",
+    "ProjectIntelligenceIdentity",
+    "ProjectIntelligenceModelGovernance",
+    "ProjectIntelligenceRisk",
+    "ProjectIntelligenceSnapshot",
     "ProjectMonthObservationRead",
+    "ProjectRecentChanges",
+    "ProjectRiskDrivers",
+    "ProjectRiskHistoryPoint",
+    "ProjectRiskIntelligenceResponse",
     "ProjectScheduleExtensionsResponse",
+    "ProjectSignals",
     "ProjectSummaryItem",
     "ProjectTrajectoryPoint",
     "ProjectTrajectoryResponse",

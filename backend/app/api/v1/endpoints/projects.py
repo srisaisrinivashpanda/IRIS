@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from typing import Literal
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.orm import Session
 
 from backend.app.db.session import get_db
+from backend.app.schemas.project_intelligence import ProjectRiskIntelligenceResponse
 from backend.app.schemas.project_month import ProjectMonthObservationRead
 from backend.app.schemas.projects import (
     FilterOptionsResponse,
@@ -17,6 +18,7 @@ from backend.app.schemas.projects import (
     ProjectTrajectoryResponse,
     QuickSearchResult,
 )
+from backend.app.services.project_intelligence import ProjectIntelligenceService
 from backend.app.services.project_service import ProjectService
 
 router = APIRouter()
@@ -191,3 +193,29 @@ def get_schedule_extensions(
     """Return schedule milestone history."""
     service = ProjectService(db)
     return service.get_schedule_extensions(project_code=project_code)
+
+
+@router.get(
+    "/projects/{project_code}/risk-intelligence",
+    response_model=ProjectRiskIntelligenceResponse,
+    summary="Get Comprehensive Project Risk Intelligence",
+    description="Retrieve unified, typed project risk intelligence orchestrating canonical observations, production schedule-risk serving, model governance, signed drivers, and factual signals.",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Project code was not found in the database"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Project code is blank or invalid"},
+    },
+)
+def get_project_risk_intelligence(
+    project_code: str = Path(..., description="Canonical source project identifier"),
+    db: Session = Depends(get_db),
+) -> ProjectRiskIntelligenceResponse:
+    """Return unified Project Risk Intelligence response."""
+    clean_code = project_code.strip()
+    if not clean_code:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Project code cannot be blank or whitespace-only",
+        )
+    service = ProjectIntelligenceService(db)
+    return service.get_project_risk_intelligence(project_code=clean_code)
+
