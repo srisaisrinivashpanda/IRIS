@@ -151,6 +151,7 @@ export interface ModelDetail {
   features_count: number;
   explanation_method: ExplanationMethod;
   calibration_policy: string;
+  coverage_period?: string | null;
   status: "READY" | "NOT_TRAINED" | "MODEL_NOT_DEPLOYED";
 }
 
