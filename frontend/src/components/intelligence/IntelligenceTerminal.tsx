@@ -5,7 +5,7 @@ import { fetchProjectRiskIntelligence } from "@/api/projects.ts";
 import { IntelligenceProjectSelector } from "./IntelligenceProjectSelector.tsx";
 import { IntelligenceTerminalHeader } from "./IntelligenceTerminalHeader.tsx";
 import { IntelligenceRiskAssessment } from "./IntelligenceRiskAssessment.tsx";
-import { IntelligenceRiskDrivers } from "./IntelligenceRiskDrivers.tsx";
+import { IntelligenceExplainability } from "./IntelligenceExplainability.tsx";
 import { IntelligenceSignals } from "./IntelligenceSignals.tsx";
 import { IntelligenceRiskHistory } from "./IntelligenceRiskHistory.tsx";
 import { IntelligenceGovernance } from "./IntelligenceGovernance.tsx";
@@ -149,14 +149,19 @@ export const IntelligenceTerminal: React.FC<IntelligenceTerminalProps> = ({
             <IntelligenceGovernance model={intelligence.model} />
           </div>
 
-          {/* Signed Drivers & Observational Signals / Recent Changes */}
-          <div className="terminal-grid-2col">
-            <IntelligenceRiskDrivers drivers={intelligence.drivers} />
-            <IntelligenceSignals
-              signals={intelligence.signals}
-              recentChanges={intelligence.recent_changes}
-            />
-          </div>
+          {/* PR-07: Dedicated Explainability & Driver Analysis Layer */}
+          <IntelligenceExplainability
+            risk={intelligence.risk}
+            model={intelligence.model}
+            drivers={intelligence.drivers}
+            dataAvailability={intelligence.data_availability}
+          />
+
+          {/* Observational Signals & Recent Changes */}
+          <IntelligenceSignals
+            signals={intelligence.signals}
+            recentChanges={intelligence.recent_changes}
+          />
 
           {/* Longitudinal History */}
           <IntelligenceRiskHistory history={intelligence.history} />
