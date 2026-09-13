@@ -428,3 +428,93 @@ The IRIS Intelligence Terminal Historical Risk Inspection Drawer provides granul
 - `IntelligenceRiskInspectionGovernance`: Model ID, model family, regime, calibration policy, and point-in-time explanation method.
 - `IntelligenceRiskInspectionDrivers`: Honest historical driver state or signed feature contributions with non-causal language.
 - `IntelligenceRiskInspectionTimeline`: Chronological evaluation timeline with active month indicator.
+
+---
+
+## 11. Authoritative Portfolio Analytics & Aggregations Backend (PR-09)
+
+PR-09 establishes the backend foundation for portfolio-level analytics, providing deterministic, mathematically sound aggregation APIs under `/api/v1/analytics`.
+
+### 11.1 Authoritative Data Sources & Provenance
+Analytics metrics are strictly backed by authentic, auditable repositories:
+1. **Canonical Monthly Project Dataset**:
+   - Source: `data/processed/projects_monthly.csv` (ingested into database table `project_month_observations`).
+   - Population: 64,608 observations spanning 4,738 unique ongoing infrastructure projects across 40 report months (`2023-01` to `2026-07`).
+   - Working unit: One ongoing project in one report month.
+2. **Production Risk Serving Layer**:
+   - Source: `data/serving/iris_risk_serving_v1.sqlite3` (`risk_records` table) and `data/serving/serving_manifest.json`.
+   - Target: Strictly `target_effective_schedule_ext_3m` (Production Schedule-Extension Risk).
+   - Population: 25,189 evaluation records across 4,120 unique assessed projects over 17 evaluation months (`2023-07` to `2026-04`).
+
+### 11.2 Core Domain Rules & Aggregation Safeguards
+
+#### 1. Unique Project Count vs Observation Count Semantics
+- `observation_count`: Total matching monthly monitoring records (`COUNT(id)`).
+- `unique_project_count`: Total distinct project entities (`COUNT(DISTINCT project_code)`).
+- The system never conflates observation count with project count.
+
+#### 2. Financial Latest-Observation Rule (Multi-Month Safeguard)
+- In monthly Flash Reports, project-level financial fields (`original_cost`, `revised_cost`) are reported repeatedly across months, and `cumulative_expenditure` is cumulative as of that month.
+- Summing these static or cumulative values across multiple monthly rows results in artificial multi-month cost multiplication.
+- **Rule**: For any portfolio snapshot or financial aggregate across a filtered window, project-level financials are calculated using each project's **latest qualifying observation satisfying the active filter scope**.
+- Example: If a project has records through `2026-07` but the query specifies `to_month=2025-06`, its financial metrics strictly use its latest qualifying record on or before `2025-06`. It never selects globally latest records outside the filter scope.
+
+#### 3. Physical Progress Arithmetic Denominator
+- `physical_progress` is a reported percentage. In legacy layouts or specific months, progress is structurally absent or missing.
+- When computing `average_physical_progress`, the denominator strictly excludes missing values (`COUNT(physical_progress)`).
+- Missing values are never imputed as 0%. If zero observations report progress, the average is returned as `null`.
+
+#### 4. Strictly Observed Temporal Trends
+- The `/trends` endpoint aggregates observations by actual `report_month`.
+- Only months supported by authentic observations are returned.
+- No synthetic continuous periods, manufactured intermediate months, or artificial zero-points are injected.
+
+#### 5. Strict Production Risk Serving Boundary
+- Risk analytics strictly queries `iris_risk_serving_v1.sqlite3` for `target_effective_schedule_ext_3m`.
+- Cost overrun ML, progress stagnation ML, and other unserved targets are not fabricated and are explicitly marked as unavailable in `unserved_targets`.
+- No arbitrary risk categorizations (e.g. `LOW`, `MEDIUM`, `HIGH`) or percentile derivations (`TOP X%`) are manufactured. Exact mathematical quantiles (`minimum`, `p25`, `median`, `p75`, `p90`, `p95`, `maximum`, `mean`) are returned via `score_distribution()`.
+- Calibrated operational risk probability (`risk_probability`) and raw model probability (`raw_probability`) remain strictly distinct.
+- Independent risk population: Risk records are aggregated independently with their own denominator (`assessed_observation_count`, `assessed_project_count`). Project observations and risk records are never joined in a manner that creates many-to-many row inflation.
+
+#### 6. Report Month vs Evaluation Month
+- Project observations reflect report publication dates (`report_month`).
+- Risk analytics reflect model evaluation dates (`evaluation_month`).
+- The API maintains this distinction transparently.
+
+#### 7. Structural Absence of District Dimension
+- Geographic aggregation operates at the `state` level.
+- District information is structurally omitted from source PAIMANA monthly Flash Reports.
+- The API explicitly returns `districts_count: null` and `district_dimension_status: "UNAVAILABLE"`. If a client passes a non-empty `district` parameter, the API returns a clear `400 Bad Request` validation error disclosing this structural absence.
+
+#### 8. Truthful Empty State & Determinism
+- Valid filters yielding zero matching records return truthful empty envelopes (`observation_count: 0`, `unique_project_count: 0`, null aggregates, empty lists) without fake default numbers.
+- All grouped responses follow deterministic sorting:
+  - Geography: `unique_project_count DESC, state ASC`
+  - Sectors: `unique_project_count DESC, sector ASC`
+  - Agencies: `unique_project_count DESC, agency ASC`
+  - Trends: `report_month ASC`
+
+### 11.3 Analytics Endpoints Contract
+
+| Endpoint | Method | Response Schema | Purpose |
+| :--- | :--- | :--- | :--- |
+| `/api/v1/analytics/overview` | `GET` | `OverviewResponse` | High-level portfolio counts, latest project-level finances, progress, and coverage metadata. |
+| `/api/v1/analytics/trends` | `GET` | `TrendsResponse` | Chronological monthly time-series strictly for observed months. |
+| `/api/v1/analytics/geography` | `GET` | `GeographyResponse` | State-level project, expenditure, and risk aggregation with district absence disclosure. |
+| `/api/v1/analytics/sectors` | `GET` | `SectorsResponse` | Categorical sector aggregation of projects, finances, and progress. |
+| `/api/v1/analytics/agencies` | `GET` | `AgenciesResponse` | Categorical agency aggregation of projects, finances, and progress. |
+| `/api/v1/analytics/financials` | `GET` | `FinancialsResponse` | Project-level financial aggregates, revision overruns, and net cost escalation. |
+| `/api/v1/analytics/progress` | `GET` | `ProgressResponse` | Progress statistics, coverage rate, missingness, and sectoral breakdown. |
+| `/api/v1/analytics/risk` | `GET` | `RiskAnalyticsResponse` | Schedule extension risk distributions, model/regime counts, and evaluation trend. |
+
+### 11.4 Shared Filter Parameters
+All analytics endpoints support standardized, parameterized query parameters:
+- `from_month` (string, `YYYY-MM`): Start month inclusive.
+- `to_month` (string, `YYYY-MM`): End month inclusive (must be `>= from_month`).
+- `state` (string, max 100 chars): Substring match on state name.
+- `sector` (string, max 100 chars): Substring match on sector name.
+- `agency` (string, max 100 chars): Substring match on implementing agency.
+- `project_code` (string): Exact match on canonical project code.
+- `regime` (string, `/risk` only): `LEGACY` or `MODERN`.
+- `district` (string): Rejected with `400 Bad Request` as structurally absent.
+
