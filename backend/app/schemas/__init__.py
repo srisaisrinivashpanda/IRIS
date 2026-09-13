@@ -1,3 +1,24 @@
+from backend.app.schemas.analytics import (
+    AgenciesResponse,
+    AgencyGroup,
+    CoverageMetadata,
+    FinancialMetrics,
+    FinancialsResponse,
+    GeographyGroup,
+    GeographyResponse,
+    OverviewResponse,
+    ProgressMetrics,
+    ProgressResponse,
+    ProgressSectorBreakdown,
+    RiskAnalyticsResponse,
+    RiskMonthlyTrend,
+    RiskRegimeBreakdown,
+    ScoreDistribution,
+    SectorGroup,
+    SectorsResponse,
+    TrendPoint,
+    TrendsResponse,
+)
 from backend.app.schemas.common import ApiResponse, ErrorDetail, ErrorResponse
 from backend.app.schemas.health import AppStatus, DatabaseStatus, HealthResponse
 from backend.app.schemas.project_intelligence import (
@@ -29,17 +50,28 @@ from backend.app.schemas.projects import (
 from backend.app.schemas.system import DatasetInfoResponse, DatasetServingStatus
 
 __all__ = [
+    "AgenciesResponse",
+    "AgencyGroup",
     "ApiResponse",
     "AppStatus",
     "CostRevisionPoint",
+    "CoverageMetadata",
     "DatabaseStatus",
     "DatasetInfoResponse",
     "DatasetServingStatus",
     "ErrorDetail",
     "ErrorResponse",
     "FilterOptionsResponse",
+    "FinancialMetrics",
+    "FinancialsResponse",
+    "GeographyGroup",
+    "GeographyResponse",
     "HealthResponse",
+    "OverviewResponse",
     "PaginatedProjectsResponse",
+    "ProgressMetrics",
+    "ProgressResponse",
+    "ProgressSectorBreakdown",
     "ProjectCostRevisionsResponse",
     "ProjectDataAvailability",
     "ProjectDetailResponse",
@@ -58,5 +90,14 @@ __all__ = [
     "ProjectTrajectoryPoint",
     "ProjectTrajectoryResponse",
     "QuickSearchResult",
+    "RiskAnalyticsResponse",
+    "RiskMonthlyTrend",
+    "RiskRegimeBreakdown",
     "ScheduleExtensionPoint",
+    "ScoreDistribution",
+    "SectorGroup",
+    "SectorsResponse",
+    "TrendPoint",
+    "TrendsResponse",
 ]
+

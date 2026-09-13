@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from backend.app.api.v1.endpoints import health, projects, risk, system
+from backend.app.api.v1.endpoints import analytics, health, projects, risk, system
 
 api_router = APIRouter()
 
@@ -12,5 +12,7 @@ api_router.include_router(health.router, tags=["Health"])
 api_router.include_router(system.router, tags=["System"])
 api_router.include_router(risk.router, prefix="/risk", tags=["Risk Intelligence"])
 api_router.include_router(projects.router, tags=["Projects"])
+api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
+
 
 
