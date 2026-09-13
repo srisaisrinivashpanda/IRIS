@@ -1,124 +1,246 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchDatasetInfo } from "@/api/system.ts";
+import {
+  fetchAnalyticsAgencies,
+  fetchAnalyticsFinancials,
+  fetchAnalyticsGeography,
+  fetchAnalyticsOverview,
+  fetchAnalyticsProgress,
+  fetchAnalyticsRisk,
+  fetchAnalyticsSectors,
+  fetchAnalyticsTrends,
+} from "@/api/analytics.ts";
 import { fetchFilterOptions } from "@/api/projects.ts";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner.tsx";
-import { Card } from "@/components/ui/Card.tsx";
-import { Button } from "@/components/ui/Button.tsx";
-import { TechnicalLabel } from "@/components/ui/TechnicalLabel.tsx";
-import { AnalyticsIntro } from "@/components/analytics/AnalyticsIntro.tsx";
-import { AnalyticsFilters, type AnalyticsFilterState } from "@/components/analytics/AnalyticsFilters.tsx";
-import { ActivityAnalytics } from "@/components/analytics/ActivityAnalytics.tsx";
-import { ScheduleAnalytics } from "@/components/analytics/ScheduleAnalytics.tsx";
-import { CostAnalytics } from "@/components/analytics/CostAnalytics.tsx";
-import { PortfolioComposition } from "@/components/analytics/PortfolioComposition.tsx";
-import { ProgressAnalytics } from "@/components/analytics/ProgressAnalytics.tsx";
-import { CompletionAnalytics } from "@/components/analytics/CompletionAnalytics.tsx";
-import { AnalyticsDataProfile } from "@/components/analytics/AnalyticsDataProfile.tsx";
+import { useAnalyticsFilters } from "@/hooks/useAnalyticsFilters.ts";
+import { AnalyticsHeader } from "@/components/analytics/AnalyticsHeader.tsx";
+import { AnalyticsFilterBar } from "@/components/analytics/AnalyticsFilterBar.tsx";
+import { AnalyticsOverviewKpi } from "@/components/analytics/AnalyticsOverviewKpi.tsx";
+import { AnalyticsTrends } from "@/components/analytics/AnalyticsTrends.tsx";
+import { AnalyticsGeography } from "@/components/analytics/AnalyticsGeography.tsx";
+import { AnalyticsSectors } from "@/components/analytics/AnalyticsSectors.tsx";
+import { AnalyticsAgencies } from "@/components/analytics/AnalyticsAgencies.tsx";
+import { AnalyticsFinancials } from "@/components/analytics/AnalyticsFinancials.tsx";
+import { AnalyticsProgress } from "@/components/analytics/AnalyticsProgress.tsx";
+import { AnalyticsRisk } from "@/components/analytics/AnalyticsRisk.tsx";
+import { AnalyticsCoverage } from "@/components/analytics/AnalyticsCoverage.tsx";
 import { usePageEnter } from "@/lib/motion/useMotion.ts";
 
 export const AnalyticsPage: React.FC = () => {
   const containerRef = usePageEnter<HTMLDivElement>();
-  const [filters, setFilters] = useState<AnalyticsFilterState>({
-    sector: "",
-    agency: "",
-    state: "",
-    ministry: "",
-    report_month: "",
-  });
 
+  // Authoritative URL-synchronized filter state
   const {
-    data: datasetInfo,
-    isLoading: isDatasetLoading,
-    isError: isDatasetError,
-    error: datasetError,
-    refetch: refetchDataset,
-  } = useQuery({
-    queryKey: ["dataset-info"],
-    queryFn: fetchDatasetInfo,
-  });
+    globalFilters,
+    riskFilters,
+    validationError,
+    setFilter,
+    clearFilter,
+    clearAllFilters,
+    toggleFilter,
+    activeFilters,
+  } = useAnalyticsFilters();
 
-  const {
-    data: filterOptions,
-    isLoading: isFiltersLoading,
-  } = useQuery({
+  // Authoritative filter options catalog
+  const { data: filterOptions } = useQuery({
     queryKey: ["filter-options"],
     queryFn: fetchFilterOptions,
+    staleTime: 10 * 60 * 1000,
   });
 
-  if (isDatasetLoading && isFiltersLoading) {
-    return (
-      <div className="analytics-container">
-        <div style={{ padding: "80px 0", display: "flex", justifyContent: "center" }}>
-          <LoadingSpinner size="lg" label="CONNECTING TO IRIS PORTFOLIO ANALYTICS..." />
-        </div>
-      </div>
-    );
-  }
+  // Section 1: Overview
+  const {
+    data: overviewData,
+    isLoading: isOverviewLoading,
+    isError: isOverviewError,
+    error: overviewError,
+    refetch: refetchOverview,
+  } = useQuery({
+    queryKey: ["analytics", "overview", globalFilters],
+    queryFn: () => fetchAnalyticsOverview(globalFilters),
+  });
 
-  if (isDatasetError) {
-    return (
-      <div className="analytics-container">
-        <div style={{ maxWidth: "600px", margin: "60px auto" }}>
-          <TechnicalLabel label="SERVICE FAULT" sublabel="ANALYTICS PIPELINE" />
-          <Card
-            style={{ marginTop: "16px" }}
-            padding="lg"
-            title="Analytics Service Unavailable"
-            subtitle="DATASET METADATA RETRIEVAL FAILED"
-          >
-            <p
-              style={{
-                fontFamily: "var(--font-sans)",
-                fontSize: "var(--font-size-base)",
-                color: "var(--color-text-variant)",
-                lineHeight: 1.6,
-                marginBottom: "24px",
-              }}
-            >
-              {datasetError instanceof Error ? datasetError.message : "Failed to load dataset metadata."}
-            </p>
-            <Button variant="primary" size="sm" onClick={() => refetchDataset()}>
-              RETRY CONNECTION
-            </Button>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  // Section 2: Temporal Trends
+  const {
+    data: trendsData,
+    isLoading: isTrendsLoading,
+    isError: isTrendsError,
+    error: trendsError,
+    refetch: refetchTrends,
+  } = useQuery({
+    queryKey: ["analytics", "trends", globalFilters],
+    queryFn: () => fetchAnalyticsTrends(globalFilters),
+  });
+
+  // Section 3: Geography (State-level)
+  const {
+    data: geographyData,
+    isLoading: isGeographyLoading,
+    isError: isGeographyError,
+    error: geographyError,
+    refetch: refetchGeography,
+  } = useQuery({
+    queryKey: ["analytics", "geography", globalFilters],
+    queryFn: () => fetchAnalyticsGeography(globalFilters),
+  });
+
+  // Section 4: Sectors
+  const {
+    data: sectorsData,
+    isLoading: isSectorsLoading,
+    isError: isSectorsError,
+    error: sectorsError,
+    refetch: refetchSectors,
+  } = useQuery({
+    queryKey: ["analytics", "sectors", globalFilters],
+    queryFn: () => fetchAnalyticsSectors(globalFilters),
+  });
+
+  // Section 5: Agencies
+  const {
+    data: agenciesData,
+    isLoading: isAgenciesLoading,
+    isError: isAgenciesError,
+    error: agenciesError,
+    refetch: refetchAgencies,
+  } = useQuery({
+    queryKey: ["analytics", "agencies", globalFilters],
+    queryFn: () => fetchAnalyticsAgencies(globalFilters),
+  });
+
+  // Section 6: Financials
+  const {
+    data: financialsData,
+    isLoading: isFinancialsLoading,
+    isError: isFinancialsError,
+    error: financialsError,
+    refetch: refetchFinancials,
+  } = useQuery({
+    queryKey: ["analytics", "financials", globalFilters],
+    queryFn: () => fetchAnalyticsFinancials(globalFilters),
+  });
+
+  // Section 7: Physical Progress
+  const {
+    data: progressData,
+    isLoading: isProgressLoading,
+    isError: isProgressError,
+    error: progressError,
+    refetch: refetchProgress,
+  } = useQuery({
+    queryKey: ["analytics", "progress", globalFilters],
+    queryFn: () => fetchAnalyticsProgress(globalFilters),
+  });
+
+  // Section 8: Production Schedule Risk (incorporates risk-specific regime filter)
+  const {
+    data: riskData,
+    isLoading: isRiskLoading,
+    isError: isRiskError,
+    error: riskError,
+    refetch: refetchRisk,
+  } = useQuery({
+    queryKey: ["analytics", "risk", riskFilters],
+    queryFn: () => fetchAnalyticsRisk(riskFilters),
+  });
 
   return (
-    <div ref={containerRef} className="analytics-container">
-      {/* Intro & Telemetry */}
-      <AnalyticsIntro datasetInfo={datasetInfo} />
+    <div ref={containerRef} className="analytics-container" data-testid="analytics-page">
+      {/* Workspace Header with truthful coverage metadata */}
+      <AnalyticsHeader overview={overviewData} />
 
-      {/* Filter Bar */}
-      <AnalyticsFilters
+      {/* Global Shared Filter Bar with Active Badges and URL Synchronization */}
+      <AnalyticsFilterBar
+        filters={globalFilters}
         filterOptions={filterOptions}
-        filters={filters}
-        onFilterChange={setFilters}
+        activeBadges={activeFilters}
+        validationError={validationError}
+        onFilterChange={setFilter}
+        onClearFilter={clearFilter}
+        onClearAll={clearAllFilters}
       />
 
-      {/* 01. Portfolio Activity Over Time */}
-      <ActivityAnalytics datasetInfo={datasetInfo} filters={filters} />
+      {/* Portfolio Overview KPI Strip */}
+      <AnalyticsOverviewKpi
+        data={overviewData}
+        isLoading={isOverviewLoading}
+        isError={isOverviewError}
+        error={overviewError}
+        onRetry={() => refetchOverview()}
+      />
 
-      {/* 02. Where Schedules Move */}
-      <ScheduleAnalytics datasetInfo={datasetInfo} />
+      {/* Temporal Trends */}
+      <AnalyticsTrends
+        data={trendsData}
+        isLoading={isTrendsLoading}
+        isError={isTrendsError}
+        error={trendsError}
+        onRetry={() => refetchTrends()}
+      />
 
-      {/* 03. Follow the Money */}
-      <CostAnalytics datasetInfo={datasetInfo} />
+      {/* 3-Column Categorical & Geographic Cross-Filtering Row */}
+      <div className="analytics-crossfilter-row">
+        <AnalyticsGeography
+          data={geographyData}
+          selectedState={globalFilters.state}
+          onToggleState={(st) => toggleFilter("state", st)}
+          isLoading={isGeographyLoading}
+          isError={isGeographyError}
+          error={geographyError}
+          onRetry={() => refetchGeography()}
+        />
 
-      {/* 04. Portfolio Composition */}
-      <PortfolioComposition filterOptions={filterOptions} />
+        <AnalyticsSectors
+          data={sectorsData}
+          selectedSector={globalFilters.sector}
+          onToggleSector={(sec) => toggleFilter("sector", sec)}
+          isLoading={isSectorsLoading}
+          isError={isSectorsError}
+          error={sectorsError}
+          onRetry={() => refetchSectors()}
+        />
 
-      {/* 05. Project Progress */}
-      <ProgressAnalytics datasetInfo={datasetInfo} />
+        <AnalyticsAgencies
+          data={agenciesData}
+          selectedAgency={globalFilters.agency}
+          onToggleAgency={(ag) => toggleFilter("agency", ag)}
+          isLoading={isAgenciesLoading}
+          isError={isAgenciesError}
+          error={agenciesError}
+          onRetry={() => refetchAgencies()}
+        />
+      </div>
 
-      {/* 06. Completion Movement */}
-      <CompletionAnalytics datasetInfo={datasetInfo} />
+      {/* Financial Analysis (Latest Qualifying Observation per Unique Project) */}
+      <AnalyticsFinancials
+        data={financialsData}
+        isLoading={isFinancialsLoading}
+        isError={isFinancialsError}
+        error={financialsError}
+        onRetry={() => refetchFinancials()}
+      />
 
-      {/* 07. Observations / Data Profile */}
-      <AnalyticsDataProfile datasetInfo={datasetInfo} />
+      {/* Physical Progress Analysis (Excluded Missingness & Quantiles) */}
+      <AnalyticsProgress
+        data={progressData}
+        isLoading={isProgressLoading}
+        isError={isProgressError}
+        error={progressError}
+        onRetry={() => refetchProgress()}
+      />
+
+      {/* Production Schedule-Extension Risk Analysis */}
+      <AnalyticsRisk
+        data={riskData}
+        selectedRegime={riskFilters.regime}
+        onSelectRegime={(reg) => setFilter("regime", reg)}
+        isLoading={isRiskLoading}
+        isError={isRiskError}
+        error={riskError}
+        onRetry={() => refetchRisk()}
+      />
+
+      {/* Observational Coverage & Missingness Audit Footer */}
+      <AnalyticsCoverage coverage={overviewData?.coverage} />
     </div>
   );
 };
