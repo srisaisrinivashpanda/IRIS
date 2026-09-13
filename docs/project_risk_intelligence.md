@@ -229,3 +229,38 @@ The IRIS Project Detail view consumes `GET /api/v1/projects/{project_code}/risk-
    - Cost Overrun Risk and Progress Stagnation Risk are truthfully reported as `DATA PENDING` in accordance with `data_availability.cost_risk_ml_served: false` and `data_availability.progress_stagnation_ml_served: false`.
    - Factual signals (cost revision events, schedule extension counts) are kept visually and semantically distinct from machine learning predictions.
 
+---
+
+## 7. Dedicated Intelligence Terminal Core (PR-05)
+
+The dedicated IRIS Intelligence Terminal (`/intelligence`) provides a comprehensive operational risk workstation for analysts, integrating project risk intelligence directly into the intelligence view while retaining existing portfolio risk telemetry:
+
+### 7.1 Architectural Position & URL Contract
+- Located at `/intelligence` with URL addressability via query parameter: `/intelligence?project={project_code}`.
+- Synchronized bidirectionally with URL parameters using React Router (`useSearchParams`).
+- Selecting a project updates the URL without reloading the page (`?project=CODE`).
+- Clearing the selected project cleanly transitions back to the base `/intelligence` URL with the zero-fake-metrics empty state.
+
+### 7.2 Dedicated Terminal Workstation States
+1. **Empty / No Project Selected (`/intelligence`)**:
+   - Renders the terminal container with clear guidance to search or enter a canonical project code.
+   - Strictly avoids displaying zeroed-out, default, or synthetic risk numbers (`0.0%`, "Low Risk", "#0").
+   - Preserves all historical Portfolio Risk Overview and explorer tables below the terminal.
+2. **Loading State**:
+   - Accessible loading indicator (`role="status"`, `aria-live="polite"`) announcing the retrieval of the specific project code.
+   - Does not flicker placeholder percentages or default cards.
+3. **Error State**:
+   - Clear diagnostic feedback on request failure or network disconnection.
+   - Provides options to retry transmission or clear the selection to search for another project.
+4. **Loaded Assessed State (`risk !== null`)**:
+   - **Header & Identity**: Displays canonical project code, project name, agency, sector, state, ministry, and legacy identifiers (OCMS, PMGID) alongside a direct navigation link to `/projects/:code`.
+   - **Temporal Independence**: Distinct strips display Project Snapshot Month vs Risk Assessment Month.
+   - **Operational Risk Assessment**: Displays calibrated probability, raw probability, portfolio rank, population size, percentile (`P{percentile}` strictly as reported without deriving `TOP X%`), assessment month, model ID, and target dynamically.
+   - **Signed Risk Drivers**: Dual-column layout categorizing positive (risk-increasing) and negative (risk-decreasing) feature contributions in raw margin logit space.
+   - **Factual Signals & Recent Changes**: Factual observational signals (cost revision count & ratio, schedule extension count, observation span) and deterministic month-over-month deltas. Initial observations honestly state that no prior observation is available rather than fabricating deltas.
+   - **Historical Risk Trajectory**: Chronological line chart (Recharts) and structured data table. If evaluations span multiple regimes or model architectures, an explicit regime transition banner highlights model differences.
+   - **Model Specification & Traceability**: Keyboard-accessible collapsible governance panel disclosing model ID, target formulation, model family, active status, coverage period, calibration policy, and explanation method.
+   - **Serving System Audit**: Unserved ML domains (Cost Overrun Risk and Progress Stagnation Risk) are explicitly and truthfully marked as `DATA PENDING`.
+5. **Loaded Unassessed State (`risk === null`)**:
+   - Truthfully displays `NOT ASSESSED` rather than 0% probability or "Low Risk".
+   - Explains that the project is recorded in canonical PAIMANA infrastructure monitoring records, but no operational schedule-risk assessment is currently served in the production model serving layer.
