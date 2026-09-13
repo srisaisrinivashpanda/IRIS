@@ -46,7 +46,7 @@ export const IrisSignedDriversChart: React.FC<IrisSignedDriversChartProps> = ({
     ...negList.map((c) => ({
       feature: c.feature,
       name: c.display_name || c.feature,
-      contribution: Number(c.contribution.toFixed(2)),
+      contribution: Number(c.contribution.toFixed(3)),
       direction: c.direction,
       value: c.value,
       type: "Risk Reducing (-Δ)",
@@ -54,7 +54,7 @@ export const IrisSignedDriversChart: React.FC<IrisSignedDriversChartProps> = ({
     ...posList.map((c) => ({
       feature: c.feature,
       name: c.display_name || c.feature,
-      contribution: Number(c.contribution.toFixed(2)),
+      contribution: Number(c.contribution.toFixed(3)),
       direction: c.direction,
       value: c.value,
       type: "Risk Increasing (+Δ)",
