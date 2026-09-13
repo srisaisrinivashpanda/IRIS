@@ -12,12 +12,19 @@ import {
 } from "recharts";
 import type { ProjectRiskHistoryPoint } from "@/types/project.ts";
 import { IrisChartTooltip } from "@/components/common/charts/IrisChartTooltip.tsx";
+import { Eye } from "lucide-react";
 
 interface IntelligenceRiskHistoryProps {
   history: ProjectRiskHistoryPoint[];
+  selectedMonth?: string | null;
+  onSelectMonth?: (month: string) => void;
 }
 
-export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = ({ history }) => {
+export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = ({
+  history,
+  selectedMonth,
+  onSelectMonth,
+}) => {
   if (!history || history.length === 0) {
     return (
       <div className="terminal-card">
@@ -79,7 +86,31 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
     regime: h.regime,
     modelId: h.model_id,
     calibrationActive: h.calibration_active,
+    isSelected: h.report_month === selectedMonth,
   }));
+
+  /**
+   * Strictly resolves actual evaluation month from an underlying historical record.
+   * Never derives, interpolates, or approximates a month from raw coordinates.
+   */
+  const handleChartClick = (e: unknown) => {
+    if (!onSelectMonth) return;
+    const eventAny = e as {
+      activePayload?: Array<{ payload?: { month?: string } }>;
+      month?: string;
+    };
+    const candidateMonth =
+      eventAny?.activePayload?.[0]?.payload?.month || eventAny?.month;
+    if (!candidateMonth) return;
+
+    // Strict validation: must match an actual historical record
+    const matchingRecord = sortedHistory.find(
+      (h) => h.report_month === candidateMonth
+    );
+    if (matchingRecord) {
+      onSelectMonth(matchingRecord.report_month);
+    }
+  };
 
   return (
     <div className="terminal-card">
@@ -157,6 +188,24 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
             </div>
           </div>
 
+          <div className="single-history-actions">
+            <button
+              type="button"
+              className={`terminal-inspect-btn single-inspect ${
+                sortedHistory[0].report_month === selectedMonth ? "active" : ""
+              }`}
+              onClick={() => onSelectMonth?.(sortedHistory[0].report_month)}
+              aria-label={`Inspect historical evaluation for ${sortedHistory[0].report_month}`}
+            >
+              <Eye size={13} aria-hidden="true" />
+              <span>
+                {sortedHistory[0].report_month === selectedMonth
+                  ? "INSPECTING EVALUATION"
+                  : "INSPECT EVALUATION RECORD"}
+              </span>
+            </button>
+          </div>
+
           <p className="terminal-single-history-note monospace">
             Only a single historical evaluation is recorded for this project. Longitudinal trajectory charts require multiple observation periods to establish a trend without manufacturing synthetic points.
           </p>
@@ -164,12 +213,17 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
       ) : (
         /* State B: Multi-Observation Longitudinal Line Chart */
         <div className="terminal-history-chart-wrapper">
-          <div style={{ width: "100%", height: 220 }}>
+          <div className="terminal-chart-guidance monospace">
+            <span>TIP: Click any evaluation point or table row to inspect that month in detail.</span>
+          </div>
+
+          <div style={{ width: "100%", height: 230 }}>
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <ComposedChart
                 data={chartData}
                 margin={{ top: 16, right: 16, left: -20, bottom: 4 }}
                 syncId="iris-terminal-history"
+                onClick={handleChartClick}
               >
                 <CartesianGrid stroke="#E2E3DF" strokeDasharray="3 3" vertical={false} />
                 <XAxis
@@ -265,16 +319,42 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
                   />
                 ))}
 
+                {/* Calibrated Risk Line with Click Support */}
                 <Line
                   type="linear"
                   dataKey="calibratedRisk"
                   name="Calibrated Risk"
                   stroke="#1A3C2B"
                   strokeWidth={2}
-                  dot={{ r: 4, fill: "#1A3C2B", stroke: "#FFFFFF", strokeWidth: 1.5 }}
+                  dot={(props: { cx?: number; cy?: number; payload?: { month?: string } }) => {
+                    const isSelected = props.payload?.month === selectedMonth;
+                    return (
+                      <circle
+                        key={`dot-calib-${props.payload?.month}`}
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={isSelected ? 6 : 4}
+                        fill={isSelected ? "#15803D" : "#1A3C2B"}
+                        stroke="#FFFFFF"
+                        strokeWidth={isSelected ? 2.5 : 1.5}
+                        style={{ cursor: "pointer" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (props.payload?.month) {
+                            const exact = sortedHistory.find(
+                              (h) => h.report_month === props.payload?.month
+                            );
+                            if (exact) onSelectMonth?.(exact.report_month);
+                          }
+                        }}
+                      />
+                    );
+                  }}
                   activeDot={{ r: 6, fill: "#1A3C2B", stroke: "#FFFFFF", strokeWidth: 2 }}
                   isAnimationActive={false}
                 />
+
+                {/* Raw Probability Line with Click Support */}
                 <Line
                   type="linear"
                   dataKey="rawProbability"
@@ -282,7 +362,30 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
                   stroke="#8A8E8A"
                   strokeWidth={1.5}
                   strokeDasharray="4 2"
-                  dot={{ r: 3, fill: "#8A8E8A", stroke: "#FFFFFF", strokeWidth: 1 }}
+                  dot={(props: { cx?: number; cy?: number; payload?: { month?: string } }) => {
+                    const isSelected = props.payload?.month === selectedMonth;
+                    return (
+                      <circle
+                        key={`dot-raw-${props.payload?.month}`}
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={isSelected ? 5 : 3}
+                        fill={isSelected ? "#15803D" : "#8A8E8A"}
+                        stroke="#FFFFFF"
+                        strokeWidth={isSelected ? 2 : 1}
+                        style={{ cursor: "pointer" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (props.payload?.month) {
+                            const exact = sortedHistory.find(
+                              (h) => h.report_month === props.payload?.month
+                            );
+                            if (exact) onSelectMonth?.(exact.report_month);
+                          }
+                        }}
+                      />
+                    );
+                  }}
                   activeDot={{ r: 5, fill: "#1A3C2B", stroke: "#FFFFFF", strokeWidth: 1.5 }}
                   isAnimationActive={false}
                 />
@@ -292,7 +395,7 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
         </div>
       )}
 
-      {/* Chronological Table as Accessible Alternative */}
+      {/* Chronological Table as Accessible Alternative with Valid Table Structure */}
       <div className="terminal-history-table-wrap">
         <table className="terminal-history-table" aria-label="Chronological risk history">
           <thead>
@@ -305,39 +408,62 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
               <th scope="col">REGIME</th>
               <th scope="col">MODEL ID</th>
               <th scope="col">CALIBRATION</th>
+              <th scope="col">INSPECTION</th>
             </tr>
           </thead>
           <tbody>
-            {sortedHistory.map((item) => (
-              <tr key={item.report_month}>
-                <td className="monospace font-bold">{item.report_month}</td>
-                <td className="monospace font-bold">
-                  {(item.risk_probability * 100).toFixed(1)}%
-                </td>
-                <td className="monospace muted">
-                  {(item.raw_probability * 100).toFixed(1)}%
-                </td>
-                <td className="monospace">#{item.risk_rank}</td>
-                <td className="monospace">P{(item.risk_percentile * 100).toFixed(1)}</td>
-                <td>
-                  <span className={`terminal-mini-badge ${item.regime.toLowerCase()}`}>
-                    {item.regime}
-                  </span>
-                </td>
-                <td className="monospace muted" title={item.model_id}>
-                  {item.model_id}
-                </td>
-                <td>
-                  <span
-                    className={`terminal-mini-status ${
-                      item.calibration_active ? "active" : "inactive"
-                    }`}
-                  >
-                    {item.calibration_active ? "ACTIVE" : "RAW"}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {sortedHistory.map((item) => {
+              const isSelected = item.report_month === selectedMonth;
+              return (
+                <tr
+                  key={item.report_month}
+                  className={`terminal-history-row ${isSelected ? "selected" : ""}`}
+                  aria-selected={isSelected}
+                  onClick={() => onSelectMonth?.(item.report_month)}
+                >
+                  <td className="monospace font-bold">{item.report_month}</td>
+                  <td className="monospace font-bold">
+                    {(item.risk_probability * 100).toFixed(1)}%
+                  </td>
+                  <td className="monospace muted">
+                    {(item.raw_probability * 100).toFixed(1)}%
+                  </td>
+                  <td className="monospace">#{item.risk_rank}</td>
+                  <td className="monospace">P{(item.risk_percentile * 100).toFixed(1)}</td>
+                  <td>
+                    <span className={`terminal-mini-badge ${item.regime.toLowerCase()}`}>
+                      {item.regime}
+                    </span>
+                  </td>
+                  <td className="monospace muted" title={item.model_id}>
+                    {item.model_id}
+                  </td>
+                  <td>
+                    <span
+                      className={`terminal-mini-status ${
+                        item.calibration_active ? "active" : "inactive"
+                      }`}
+                    >
+                      {item.calibration_active ? "ACTIVE" : "RAW"}
+                    </span>
+                  </td>
+                  <td className="terminal-table-action-cell">
+                    <button
+                      type="button"
+                      className={`terminal-inspect-btn ${isSelected ? "active" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectMonth?.(item.report_month);
+                      }}
+                      aria-label={`Inspect historical risk evaluation for ${item.report_month}`}
+                    >
+                      <Eye size={11} aria-hidden="true" />
+                      <span>{isSelected ? "INSPECTED" : "INSPECT"}</span>
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
