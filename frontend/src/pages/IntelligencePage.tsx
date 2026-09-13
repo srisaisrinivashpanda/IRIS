@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchModelInfo,
@@ -12,6 +13,7 @@ import {
   RiskFilters,
   type IntelligenceFilterState,
 } from "@/components/intelligence/RiskFilters.tsx";
+import { IntelligenceTerminal } from "@/components/intelligence/IntelligenceTerminal.tsx";
 import { PortfolioRiskOverview } from "@/components/intelligence/PortfolioRiskOverview.tsx";
 import { RiskProjectTable } from "@/components/intelligence/RiskProjectTable.tsx";
 import { RiskDistribution } from "@/components/intelligence/RiskDistribution.tsx";
@@ -26,6 +28,9 @@ import { usePageEnter } from "@/lib/motion/useMotion.ts";
 
 export const IntelligencePage: React.FC = () => {
   const containerRef = usePageEnter<HTMLDivElement>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedProjectCode = searchParams.get("project");
+
   const [filters, setFilters] = useState<IntelligenceFilterState>({
     report_month: "",
     regime: "",
@@ -37,7 +42,7 @@ export const IntelligencePage: React.FC = () => {
   });
 
   const [page, setPage] = useState(1);
-  const [selectedProject, setSelectedProject] = useState<RiskRecord | TopRiskProject | null>(null);
+  const [selectedDrawerProject, setSelectedDrawerProject] = useState<RiskRecord | TopRiskProject | null>(null);
 
   // 1. Fetch Risk Dashboard Options
   const { data: optionsData } = useQuery({
@@ -124,6 +129,22 @@ export const IntelligencePage: React.FC = () => {
     setPage(1);
   };
 
+  const handleSelectTerminalProject = (projectCode: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("project", projectCode.trim());
+      return next;
+    });
+  };
+
+  const handleClearTerminalProject = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("project");
+      return next;
+    });
+  };
+
   return (
     <div ref={containerRef} className="intelligence-container">
       {/* Intro & Telemetry */}
@@ -132,7 +153,14 @@ export const IntelligencePage: React.FC = () => {
         reportMonth={activeMonth}
       />
 
-      {/* Filter Toolbar */}
+      {/* CORE INTELLIGENCE TERMINAL: Analyst Single-Project Workstation */}
+      <IntelligenceTerminal
+        selectedProjectCode={selectedProjectCode}
+        onSelectProject={handleSelectTerminalProject}
+        onClearProject={handleClearTerminalProject}
+      />
+
+      {/* Filter Toolbar for Portfolio Analytics */}
       <RiskFilters
         options={optionsData}
         filters={filters}
@@ -150,7 +178,10 @@ export const IntelligencePage: React.FC = () => {
         page={page}
         pageSize={25}
         onPageChange={setPage}
-        onSelectProject={setSelectedProject}
+        onSelectProject={(proj) => {
+          setSelectedDrawerProject(proj);
+          handleSelectTerminalProject(proj.project_code);
+        }}
       />
 
       {/* Section 03: Model Output Distribution (Quantile Summary) */}
@@ -178,10 +209,10 @@ export const IntelligencePage: React.FC = () => {
       <IntelligenceAuditTrail modelInfo={modelInfoData} />
 
       {/* Section 07: Project Inspection Console Drawer */}
-      {selectedProject && (
+      {selectedDrawerProject && (
         <RiskDetailDrawer
-          record={selectedProject}
-          onClose={() => setSelectedProject(null)}
+          record={selectedDrawerProject}
+          onClose={() => setSelectedDrawerProject(null)}
         />
       )}
     </div>
