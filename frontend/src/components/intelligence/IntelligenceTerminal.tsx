@@ -10,6 +10,7 @@ import { IntelligenceSignals } from "./IntelligenceSignals.tsx";
 import { IntelligenceRiskHistory } from "./IntelligenceRiskHistory.tsx";
 import { IntelligenceGovernance } from "./IntelligenceGovernance.tsx";
 import { IntelligenceDataAvailability } from "./IntelligenceDataAvailability.tsx";
+import { IntelligenceRiskInspectionDrawer } from "./IntelligenceRiskInspectionDrawer.tsx";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner.tsx";
 
 interface IntelligenceTerminalProps {
@@ -23,6 +24,14 @@ export const IntelligenceTerminal: React.FC<IntelligenceTerminalProps> = ({
   onSelectProject,
   onClearProject,
 }) => {
+  // PR-08: Selected historical evaluation month for deep inspection
+  const [selectedEvaluationMonth, setSelectedEvaluationMonth] = React.useState<string | null>(null);
+
+  // Clear historical inspection when project changes or is cleared
+  React.useEffect(() => {
+    setSelectedEvaluationMonth(null);
+  }, [selectedProjectCode]);
+
   const {
     data: intelligence,
     isLoading,
@@ -33,6 +42,17 @@ export const IntelligenceTerminal: React.FC<IntelligenceTerminalProps> = ({
     queryFn: () => fetchProjectRiskIntelligence(selectedProjectCode!),
     enabled: Boolean(selectedProjectCode),
   });
+
+  const handleClearProject = React.useCallback(() => {
+    setSelectedEvaluationMonth(null);
+    onClearProject();
+  }, [onClearProject]);
+
+  // Resolve exact historical record from actual history collection
+  const selectedHistoricalRecord = React.useMemo(() => {
+    if (!selectedEvaluationMonth || !intelligence?.history) return null;
+    return intelligence.history.find((h) => h.report_month === selectedEvaluationMonth) || null;
+  }, [selectedEvaluationMonth, intelligence?.history]);
 
   return (
     <section className="terminal-workspace" aria-labelledby="terminal-heading">
@@ -55,7 +75,7 @@ export const IntelligenceTerminal: React.FC<IntelligenceTerminalProps> = ({
         <IntelligenceProjectSelector
           selectedProjectCode={selectedProjectCode}
           onSelectProject={onSelectProject}
-          onClear={onClearProject}
+          onClear={handleClearProject}
         />
       </div>
 
@@ -121,7 +141,7 @@ export const IntelligenceTerminal: React.FC<IntelligenceTerminalProps> = ({
             <button
               type="button"
               className="terminal-error-btn clear"
-              onClick={onClearProject}
+              onClick={handleClearProject}
               aria-label="Clear project selection"
             >
               <span>SELECT ANOTHER PROJECT</span>
@@ -163,11 +183,27 @@ export const IntelligenceTerminal: React.FC<IntelligenceTerminalProps> = ({
             recentChanges={intelligence.recent_changes}
           />
 
-          {/* Longitudinal History */}
-          <IntelligenceRiskHistory history={intelligence.history} />
+          {/* PR-08 Upgraded Longitudinal History with Selection Controls */}
+          <IntelligenceRiskHistory
+            history={intelligence.history}
+            selectedMonth={selectedEvaluationMonth}
+            onSelectMonth={setSelectedEvaluationMonth}
+          />
 
           {/* Unserved ML Domains / Data Availability */}
           <IntelligenceDataAvailability availability={intelligence.data_availability} />
+
+          {/* PR-08: Historical Risk Evaluation Inspection Drawer */}
+          <IntelligenceRiskInspectionDrawer
+            isOpen={Boolean(selectedHistoricalRecord)}
+            record={selectedHistoricalRecord}
+            history={intelligence.history}
+            project={intelligence.project}
+            snapshot={intelligence.snapshot}
+            currentRisk={intelligence.risk}
+            onClose={() => setSelectedEvaluationMonth(null)}
+            onSelectMonth={setSelectedEvaluationMonth}
+          />
         </div>
       )}
     </section>

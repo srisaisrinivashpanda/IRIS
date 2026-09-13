@@ -352,3 +352,79 @@ Explanation methods are resolved dynamically from model governance metadata for 
 4. **Governance Limitations & Provenance**:
    - Discloses evaluation embargo lags, static vs longitudinal feature scope, and observational data constraints.
    - Prominent non-causal disclaimer reminding analysts that observed associations do not guarantee interventional outcomes.
+
+---
+
+## 10. Risk History & Inspection Drawer (PR-08)
+
+The IRIS Intelligence Terminal Historical Risk Inspection Drawer provides granular, point-in-time forensic inspection of individual monthly risk evaluations without altering data contracts, model weights, or serving artifacts:
+
+### 10.1 Architecture & Record-Based Selection
+- **Exact Historical Record as Single Source of Truth**:
+  - Selection is strictly tied to actual historical observation records (`ProjectRiskHistoryPoint`).
+  - Mouse clicks on chart points (`Recharts` Line / ComposedChart) or data table rows resolve the exact `evaluation_month` from the event payload and look up the corresponding record in `history`:
+    ```
+    actual history record
+            ↓
+    chart / table data point
+            ↓
+    click event resolves actual evaluation_month
+            ↓
+    find exact record in history: history.find(h => h.report_month === month)
+            ↓
+    open inspection drawer
+    ```
+  - Prevents approximating or inventing synthetic evaluation months from chart pixel coordinates or continuous axis approximations.
+
+### 10.2 Current Assessment vs Inspected Evaluation Separation
+- The inspection drawer maintains an explicit, unbreachable boundary between:
+  1. **Current Risk Assessment**: The latest mature prediction served under temporal embargo (`risk.report_month`, e.g. `2026-04`).
+  2. **Inspected Historical Evaluation**: The specific past evaluation point being inspected (`historyPoint.report_month`, e.g. `2026-03` or `2025-06`).
+  3. **Project Observation Snapshot**: The latest published physical/financial monitoring snapshot (`snapshot.report_month`, e.g. `2026-07`).
+- The header features a dedicated temporal comparison badge:
+  - If the inspected month matches the current assessment month: labeled `CURRENT RISK ASSESSMENT`.
+  - If inspecting an earlier month: labeled `HISTORICAL EVALUATION (N MONTHS PRIOR TO CURRENT ASSESSMENT)`.
+
+### 10.3 Metric Fidelity & Honest Formatting
+- **Calibrated Operational Probability vs Raw Model Probability**:
+  - Evaluated point-in-time operational risk probability (`risk_probability`) is displayed alongside the raw uncalibrated score (`raw_probability`).
+  - When calibration was inactive on that evaluation date (`calibration_active: false`), an explicit badge states `RAW / UNCALIBRATED`, preventing fabrication of calibrated numbers.
+- **Rank & Percentile Representation**:
+  - Displays `#risk_rank` out of `population_size` and exact percentile `P{risk_percentile}` (e.g. `P81.0`).
+  - Strictly avoids deriving subjective rankings or "Top X%" buckets without authoritative model governance taxonomy.
+
+### 10.4 Point-in-Time Model Governance & Dynamic Transitions
+- Each historical point includes its exact `model_id` and `regime` (`LEGACY` vs `MODERN`).
+- Governance metadata dynamically resolves the truthful model family and explanation method for that specific historical point:
+  - `logistic_static_only__unweighted` -> `L2-Regularized Logistic Regression (C=1.0)` | `LOGISTIC_COEFFICIENT_TIMES_TRANSFORMED_VALUE`
+  - `catboost_full_v1__unweighted` -> `CatBoost Gradient Boosted Decision Trees` | `TREE_SHAP_MARGIN_LOGIT_SPACE`
+  - Unrecognized / custom model -> Truthfully states `EXPLANATION METHOD NOT AVAILABLE`
+- If adjacent history points span different model regimes, a dynamic transition alert discloses that longitudinal comparisons cross distinct model architectures.
+
+### 10.5 Truthful Absence of Historical Drivers (Non-Negotiable Data Truth)
+- Under the production serving schema (`v1`), `ProjectRiskHistoryPoint` contains evaluated risk scores, calibration flags, ranks, and model identifiers, but **does not store historical driver contribution vectors**.
+- Non-negotiable data truth rule:
+  - The drawer **never leaks** current assessment drivers into a historical evaluation inspection.
+  - The driver section truthfully renders:
+    `HISTORICAL DRIVER EVIDENCE NOT AVAILABLE IN CURRENT SERVING CONTRACT`
+    alongside an explicit disclosure that per-month feature decompositions are not persisted in the current serving contract.
+  - If a future contract extension supplies per-month historical drivers, the component seamlessly renders signed contributions in raw margin logit space without code refactoring.
+
+### 10.6 Chronological Timeline & Multi-Observation Navigation
+- An embedded chronological timeline displays all observed evaluation months.
+- Analysts can switch between historical evaluation points directly within the drawer without closing and reopening the modal.
+- Missing report months are not synthesized; only observed historical evaluations are rendered.
+
+### 10.7 Semantic HTML, Accessibility & Motion
+- **Valid Table Structure**: Inspection buttons in the historical data table are strictly contained within `<td>` elements (`<td className="terminal-table-action-cell"><button ...>Inspect</button></td>`), avoiding invalid `<tr> > <button>` DOM nesting.
+- **Dialog Semantics**: The drawer uses `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` referencing the inspection header.
+- **Keyboard Trap & Escape Listener**: Focus is trapped within the drawer while open and returned to the triggering element upon dismissal. Pressing `Escape` closes the drawer.
+- **Reduced Motion Compliance**: Respects `prefers-reduced-motion: reduce` by disabling sliding transitions and using instantaneous state changes.
+
+### 10.8 Component Modularization
+- `IntelligenceRiskInspectionDrawer`: Modal container, backdrop, focus management, escape handling, and data availability footer.
+- `IntelligenceRiskInspectionHeader`: Inspection title, project identity, regime/calibration pills, temporal comparison badge, and close button.
+- `IntelligenceRiskInspectionMetrics`: Calibrated vs raw risk display, rank/population fraction, and percentile track.
+- `IntelligenceRiskInspectionGovernance`: Model ID, model family, regime, calibration policy, and point-in-time explanation method.
+- `IntelligenceRiskInspectionDrivers`: Honest historical driver state or signed feature contributions with non-causal language.
+- `IntelligenceRiskInspectionTimeline`: Chronological evaluation timeline with active month indicator.
