@@ -3,6 +3,7 @@
  */
 
 import type { ScoreDistribution } from "./risk.ts";
+export type { ScoreDistribution };
 
 
 
@@ -192,12 +193,18 @@ export interface RiskAnalyticsResponse {
   unserved_targets: string[];
 }
 
-export interface AnalyticsFilterParams {
+export interface GlobalAnalyticsFilters {
   from_month?: string | null;
   to_month?: string | null;
   state?: string | null;
   sector?: string | null;
   agency?: string | null;
   project_code?: string | null;
-  regime?: "LEGACY" | "MODERN" | null;
 }
+
+export interface RiskAnalyticsFilters extends GlobalAnalyticsFilters {
+  regime?: string | null;
+}
+
+export interface AnalyticsFilterParams extends RiskAnalyticsFilters {}
+
