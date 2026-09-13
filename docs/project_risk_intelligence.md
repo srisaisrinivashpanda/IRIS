@@ -297,3 +297,58 @@ The visual analytical layer of the IRIS Intelligence Terminal presents authorita
 - **Temporal Alignment Provenance**:
   - Project Snapshot Month and Risk Assessment Month are displayed via discrete temporal markers, highlighting evaluation cycle synchronization or lag without generating fake timestamps or continuous timelines.
 
+---
+
+## 9. Risk Explainability & Driver Analysis (PR-07)
+
+The explainability layer of the IRIS Intelligence Terminal deepens the analytical transparency of served risk assessments without fabricating data, modifying ML models, or changing backend serving artifacts:
+
+### 9.1 Explainability Architecture & Mathematical Semantics
+- **Raw Margin / Logit Space**: All driver contributions $\phi_j$ are represented strictly in raw model margin logit units ($z = \beta_0 + \sum_j \phi_j$), **not** as percentage probability changes or causal risk shifts.
+- **Displayed vs Complete Decomposition**: The serving contract exposes top-N slices (`top_positive`, `top_negative`, `strongest_drivers`), which are subset representations of the full 36-feature vector. Accordingly, cumulative positive and negative metrics are truthfully labeled:
+  - `"Displayed positive contribution sum"`
+  - `"Displayed negative contribution sum"`
+  - Accompanied by explicit notes indicating they represent the sum of displayed top-N drivers in margin logit units rather than the complete 36-feature model decomposition.
+- **Strict Non-Causal Policy**:
+  - Model explanations represent statistical feature contributions within an empirical classification model.
+  - The UI and documentation strictly avoid causal terminology (e.g. "causes", "caused by", "reducing this will fix", "if you lower X, risk will drop").
+  - Direction labels are defined as `"Risk-increasing contribution (+)"` and `"Risk-decreasing contribution (-)"` within the statistical model.
+
+### 9.2 Authoritative Feature Families
+Feature family classifications are derived authoritatively from `schemas/schedule_extension_3m_v1.contract.json`, comprising exactly 9 families across all 36 engineered features:
+1. **Static Project Attributes**: Initial structural characteristics (`original_cost_log`, `original_duration_months`).
+2. **Administrative Hierarchy**: Governance and organizational entities (`agency_enc`, `ministry_enc`, `sector_enc`).
+3. **Geography / Location**: Geographic classification (`state_enc`).
+4. **Cost Baseline & Revisions**: Cost growth, revisions, and expenditure ratios (`cost_revision_count`, `cost_growth_ratio`, `expenditure_to_revised_cost_ratio`).
+5. **Schedule Horizon & Revisions**: Schedule extensions, slippage, and revised horizons (`schedule_extension_count`, `schedule_growth_ratio`, `months_remaining_to_revised_completion`).
+6. **Expenditure Trajectory**: Longitudinal expenditure rates and momentum (`expenditure_velocity_3m`, `expenditure_acceleration_6m`).
+7. **Physical Progress Trajectory**: Progress completion pace and stagnation indicators (`physical_progress_velocity_3m`, `physical_progress_acceleration_6m`).
+8. **Longitudinal Inactivity & Lags**: Inactivity counters, stale reporting, and reporting gaps (`months_since_last_progress_change`, `reporting_lag_months`).
+9. **Project Scale & Ratio**: Interaction ratios and relative financial/scale scale (`burn_rate_vs_schedule_pace`, `cost_per_month_planned`).
+
+### 9.3 Model-Specific Explanation Methods
+Explanation methods are resolved dynamically from model governance metadata for the specific assessed `model_id`:
+- **CatBoost Legacy Model (`catboost_full_v1__unweighted`)**:
+  - Explanation Method: `TreeSHAP (Margin Logit Space)`
+  - Mathematical Semantics: Exact TreeSHAP additive feature contributions $\phi_i(x)$ computed directly from decision tree split paths in log-odds space.
+- **Logistic Regression Active Model (`logistic_static_only__unweighted`)**:
+  - Explanation Method: `Logistic Coefficient × Transformed Feature Product`
+  - Mathematical Semantics: Additive linear contribution $\beta_j \cdot x_j$ in log-odds space before Platt scaling calibration.
+- The interface dynamically renders the truthful method for the active assessment rather than generic composite text.
+
+### 9.4 Four Core Explainability Workstation Areas
+1. **Driver Summary (`IntelligenceDriverSummary`)**:
+   - Telemetry strip displaying total available drivers, lead positive contributor, lead negative contributor, displayed positive contribution sum, and displayed negative contribution sum.
+   - Truthful empty states when no assessment exists or when no drivers are served.
+2. **Driver Detail & Decomposition (`IntelligenceDriverDetail`)**:
+   - Diverging bar chart (`IrisSignedDriversChart`) centered at the 0.0 margin baseline.
+   - Interactive direction filtering: `ALL (N)`, `RISK-INCREASING (+)`, and `RISK-DECREASING (-)`.
+   - Sorting toggles: `MODEL ORDER` (preserving exact serving sequence) and `MAGNITUDE (DESC)`.
+   - Accessible data table view providing full screen-reader transparency.
+   - Screen-reader accessible directional announcements (e.g. `"+0.412 — risk-increasing"`).
+3. **Model Evidence ("Why this score?") (`IntelligenceModelEvidence`)**:
+   - Contextual panel detailing operational calibrated probability alongside raw probability, model ID, regime, evaluation origin month, target definition, and dynamic explanation method.
+   - Breakdown table contextualizing how individual signed drivers combine in model log-odds space.
+4. **Governance Limitations & Provenance**:
+   - Discloses evaluation embargo lags, static vs longitudinal feature scope, and observational data constraints.
+   - Prominent non-causal disclaimer reminding analysts that observed associations do not guarantee interventional outcomes.
