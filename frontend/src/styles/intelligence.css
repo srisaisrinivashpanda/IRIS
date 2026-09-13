@@ -2255,3 +2255,466 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ==========================================================================
+   PR-06: Advanced Intelligence Visualizations Styles
+   ========================================================================== */
+
+/* Visual Assessment Container */
+.terminal-assessment-visual-block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px;
+  background: var(--color-surface-paper, #F8F9F7);
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+  border-radius: 0;
+}
+
+/* 1. Horizontal Risk Probability Scale */
+.terminal-prob-scale-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.terminal-prob-scale-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.terminal-prob-scale-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-primary-950, #0C1F17);
+}
+
+.terminal-prob-scale-values {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.terminal-prob-scale-current {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary, #1A3C2B);
+}
+
+.terminal-prob-scale-raw {
+  font-size: 11px;
+  color: var(--color-text-muted, #78716C);
+}
+
+.terminal-prob-scale-track-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.terminal-prob-scale-track {
+  position: relative;
+  height: 8px;
+  background: var(--color-surface-container, #EEEEEB);
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+  width: 100%;
+}
+
+.terminal-prob-scale-fill {
+  height: 100%;
+  background: var(--color-primary, #1A3C2B);
+  transition: width 0.3s ease;
+}
+
+.terminal-prob-scale-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.terminal-prob-scale-marker.operational .terminal-marker-pin {
+  width: 14px;
+  height: 14px;
+  background: var(--color-primary-950, #0C1F17);
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 0 1px var(--color-primary, #1A3C2B);
+  border-radius: 0;
+}
+
+.terminal-prob-scale-marker.raw .terminal-marker-pin-raw {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+  border: 2px dashed var(--color-text-muted, #78716C);
+}
+
+.terminal-marker-tooltip {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--color-primary-950, #0C1F17);
+  color: #FFFFFF;
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+
+.terminal-prob-scale-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--color-text-muted, #78716C);
+}
+
+.terminal-prob-scale-subtext {
+  font-size: 10px;
+  color: var(--color-text-muted, #78716C);
+  line-height: 1.4;
+}
+
+/* 2. Portfolio Position Component */
+.terminal-portfolio-pos-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--color-border-hairline, #D6D8D2);
+  padding-top: 10px;
+}
+
+.terminal-portfolio-pos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+}
+
+.terminal-portfolio-pos-title {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-950, #0C1F17);
+}
+
+.terminal-portfolio-pos-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.terminal-portfolio-rank {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary-950, #0C1F17);
+}
+
+.terminal-portfolio-pop {
+  font-size: 10px;
+  color: var(--color-text-muted, #78716C);
+}
+
+.terminal-portfolio-percentile-tag {
+  font-size: 11px;
+  font-weight: 700;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+  padding: 1px 5px;
+  color: var(--color-primary, #1A3C2B);
+}
+
+.terminal-portfolio-track-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.terminal-portfolio-track {
+  position: relative;
+  height: 6px;
+  background: var(--color-surface-container, #EEEEEB);
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+  width: 100%;
+}
+
+.terminal-portfolio-fill {
+  height: 100%;
+  background: var(--color-mint-subtle, #A9CFB7);
+  transition: width 0.3s ease;
+}
+
+.terminal-portfolio-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.terminal-portfolio-pin {
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary, #1A3C2B);
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 0 1px var(--color-primary, #1A3C2B);
+}
+
+.terminal-portfolio-marker-val {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-primary-950, #0C1F17);
+  background: #FFFFFF;
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+  padding: 1px 3px;
+  white-space: nowrap;
+}
+
+.terminal-portfolio-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--color-text-muted, #78716C);
+}
+
+.terminal-portfolio-meta {
+  font-size: 9px;
+  color: var(--color-text-muted, #78716C);
+}
+
+/* 3. Diverging Drivers Recharts Wrapper */
+.terminal-driver-chart-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+  padding: 12px;
+}
+
+.terminal-driver-axis-guide {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border-hairline, #D6D8D2);
+}
+
+.driver-guide-neg {
+  color: var(--color-primary, #1A3C2B);
+}
+
+.driver-guide-zero {
+  color: var(--color-primary-950, #0C1F17);
+  background: var(--color-surface-paper, #F8F9F7);
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+  padding: 1px 6px;
+}
+
+.driver-guide-pos {
+  color: var(--color-coral, #BA1A1A);
+}
+
+/* 4. Single History Evaluation Card */
+.terminal-single-history-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--color-surface-paper, #F8F9F7);
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+  padding: 16px;
+}
+
+.terminal-single-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-hairline, #D6D8D2);
+  padding-bottom: 8px;
+}
+
+.single-history-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-primary-950, #0C1F17);
+}
+
+.single-history-month {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary, #1A3C2B);
+}
+
+.terminal-single-history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .terminal-single-history-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.single-history-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+  padding: 8px 10px;
+}
+
+.single-metric-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  color: var(--color-text-muted, #78716C);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.single-metric-val {
+  font-size: 13px;
+  color: var(--color-primary-950, #0C1F17);
+}
+
+.single-metric-val.font-bold {
+  font-weight: 700;
+}
+
+.single-metric-val.muted {
+  color: var(--color-text-muted, #78716C);
+}
+
+.terminal-single-history-note {
+  font-size: 10px;
+  color: var(--color-text-muted, #78716C);
+  line-height: 1.45;
+  margin: 0;
+  padding-top: 4px;
+}
+
+/* 5. Temporal Markers Visual Layout */
+.terminal-temporal-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.terminal-temporal-markers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  margin-top: 6px;
+  border-top: 1px dashed var(--color-border-hairline, #D6D8D2);
+}
+
+.temporal-marker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.marker-row-label {
+  font-size: 9px;
+  color: var(--color-text-muted, #78716C);
+  width: 80px;
+}
+
+.marker-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.marker-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border-hairline, #D6D8D2);
+}
+
+.marker-point.active .marker-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-primary, #1A3C2B);
+}
+
+.marker-point.coincident {
+  border-color: var(--color-primary, #1A3C2B);
+}
+
+.marker-point.coincident .marker-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-primary, #1A3C2B);
+}
+
+.marker-point.divergent {
+  border-color: var(--color-amber, #EAB308);
+}
+
+.marker-point.divergent .marker-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-amber, #EAB308);
+}
+
+.marker-point.unassessed {
+  background: var(--color-surface-container, #EEEEEB);
+  color: var(--color-text-muted, #78716C);
+}
+
+.marker-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-primary-950, #0C1F17);
+}
+
+.temporal-alignment-tag {
+  font-size: 10px;
+  padding: 4px 8px;
+  line-height: 1.4;
+}
+
+.temporal-alignment-tag.divergent {
+  background: #FFFBEB;
+  color: #78350F;
+  border: 1px solid #FDE68A;
+}
+
+.temporal-alignment-tag.coincident {
+  background: #F0FDF4;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .terminal-prob-scale-fill,
+  .terminal-portfolio-fill,
+  .terminal-prob-scale-marker,
+  .terminal-portfolio-marker {
+    transition: none !important;
+  }
+}

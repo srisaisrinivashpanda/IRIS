@@ -264,3 +264,36 @@ The dedicated IRIS Intelligence Terminal (`/intelligence`) provides a comprehens
 5. **Loaded Unassessed State (`risk === null`)**:
    - Truthfully displays `NOT ASSESSED` rather than 0% probability or "Low Risk".
    - Explains that the project is recorded in canonical PAIMANA infrastructure monitoring records, but no operational schedule-risk assessment is currently served in the production model serving layer.
+
+---
+
+## 8. Advanced Intelligence Visualizations (PR-06)
+
+The visual analytical layer of the IRIS Intelligence Terminal presents authoritative machine learning outputs and project observations without altering data contracts, model weights, or serving artifacts:
+
+### 8.1 Data Faithfulness & Analytical Principles
+- **No Interpolation or Smoothing**: Historical charts render strictly observed report months. Missing months between observations are never filled, smoothed, or interpolated with synthetic points.
+- **Zero Subjective Categorization**: Risk probability is presented on an objective 0% to 100% horizontal analytical scale. Subjective threshold labels (such as "Low / Medium / High Risk") are never introduced without authoritative model governance taxonomy.
+- **Calibrated vs Raw Probability Distinction**:
+  - Operational probability (`risk_probability`) is rendered as a solid primary series.
+  - Raw model logit score (`raw_probability`) is rendered as a secondary dashed series.
+  - When calibration is inactive (`calibration_active: false`), no synthetic calibrated probability is manufactured; the UI indicates that calibration is inactive / raw.
+- **Dynamic Regime & Model Transition Markers**:
+  - The transition between CatBoost (LEGACY) and Logistic Regression (MODERN) is evaluated dynamically from the project's historical records.
+  - Reference lines and transition banners appear only when a project's history spans multiple regimes or distinct model architectures. Projects with records exclusively in one regime do not display spurious transition markers.
+- **Signed Margin Drivers (Diverging Representation)**:
+  - Recharts diverging horizontal bar chart centered at the 0.0 model intercept baseline.
+  - Features with positive margin contributions extend rightward in coral (`#BA1A1A`), elevating extension risk.
+  - Features with negative margin contributions extend leftward in dark green (`#1A3C2B`), reducing extension risk.
+  - Drivers are explicitly labeled as **Signed Margin Contributions** in raw logit space, never as causal effects or percentage changes.
+  - Backend ordering and full driver counts are preserved.
+- **Portfolio Position & Percentile**:
+  - Displays `#risk_rank` within `population_size` alongside a linear track marker for `P{percentile}`.
+  - Strictly presents reported percentile without inventing derived "TOP X%" rankings.
+- **Single-Observation & Empty States**:
+  - A project with a single historical evaluation displays a discrete evaluation card with exact metrics and an explicit note that longitudinal trend lines require multiple observation periods. No misleading single-point trend line is drawn.
+  - Empty history renders an honest unavailable state without zero lines or default markers.
+  - Unassessed projects (`risk: null`) render `NOT ASSESSED` without zero gauges or zero-value charts.
+- **Temporal Alignment Provenance**:
+  - Project Snapshot Month and Risk Assessment Month are displayed via discrete temporal markers, highlighting evaluation cycle synchronization or lag without generating fake timestamps or continuous timelines.
+

@@ -8,6 +8,7 @@ import {
   Tooltip,
   CartesianGrid,
   Legend,
+  ReferenceLine,
 } from "recharts";
 import type { ProjectRiskHistoryPoint } from "@/types/project.ts";
 import { IrisChartTooltip } from "@/components/common/charts/IrisChartTooltip.tsx";
@@ -38,11 +39,36 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
     a.report_month.localeCompare(b.report_month)
   );
 
-  // Check for model / regime transition across history
+  // Check for model / regime transition dynamically across history
   const regimesPresent = Array.from(new Set(sortedHistory.map((h) => h.regime)));
   const modelsPresent = Array.from(new Set(sortedHistory.map((h) => h.model_id)));
   const hasRegimeTransition = regimesPresent.length > 1;
   const hasModelTransition = modelsPresent.length > 1;
+
+  // Find exact boundary months where regime or model changed
+  const transitions: Array<{
+    month: string;
+    fromRegime: string;
+    toRegime: string;
+    fromModel: string;
+    toModel: string;
+  }> = [];
+
+  for (let i = 1; i < sortedHistory.length; i++) {
+    const prev = sortedHistory[i - 1];
+    const curr = sortedHistory[i];
+    if (prev.regime !== curr.regime || prev.model_id !== curr.model_id) {
+      transitions.push({
+        month: curr.report_month,
+        fromRegime: prev.regime,
+        toRegime: curr.regime,
+        fromModel: prev.model_id,
+        toModel: curr.model_id,
+      });
+    }
+  }
+
+  const isSingleObservation = sortedHistory.length === 1;
 
   const chartData = sortedHistory.map((h) => ({
     month: h.report_month,
@@ -69,7 +95,7 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
         </div>
       </div>
 
-      {/* Model / Regime Transition Notice */}
+      {/* Model / Regime Transition Notice (Rendered dynamically only when transition exists) */}
       {(hasRegimeTransition || hasModelTransition) && (
         <div className="terminal-transition-banner" role="note">
           <span className="transition-tag">REGIME TRANSITION DETECTED</span>
@@ -81,103 +107,192 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
         </div>
       )}
 
-      {/* Recharts Composed Line Chart */}
-      <div className="terminal-history-chart-wrapper">
-        <div style={{ width: "100%", height: 200 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={chartData}
-              margin={{ top: 12, right: 16, left: -20, bottom: 4 }}
-              syncId="iris-terminal-history"
-            >
-              <CartesianGrid stroke="#E2E3DF" strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="month"
-                tick={{ fill: "#606460", fontSize: 10, fontFamily: "var(--font-mono)" }}
-                stroke="#E2E3DF"
-              />
-              <YAxis
-                domain={[0, 100]}
-                tick={{ fill: "#606460", fontSize: 10, fontFamily: "var(--font-mono)" }}
-                stroke="#E2E3DF"
-                tickFormatter={(v) => `${v}%`}
-              />
-              <Tooltip
-                content={
-                  <IrisChartTooltip
-                    titlePrefix="ASSESSMENT MONTH"
-                    customFormatter={(payload) => {
-                      const entry = Array.isArray(payload) ? payload[0]?.payload : undefined;
-                      if (!entry) return [];
-                      return [
-                        {
-                          label: "CALIBRATED RISK",
-                          value: `${entry.calibratedRisk}%`,
-                          color: "#1A3C2B",
-                        },
-                        {
-                          label: "RAW PROBABILITY",
-                          value: `${entry.rawProbability}%`,
-                          color: "#8A8E8A",
-                        },
-                        {
-                          label: "PORTFOLIO RANK",
-                          value: `#${entry.rank}`,
-                          color: "#FFFFFF",
-                        },
-                        {
-                          label: "REGIME",
-                          value: entry.regime,
-                          color: "#E2E3DF",
-                        },
-                        {
-                          label: "MODEL ID",
-                          value: entry.modelId,
-                          color: "#E2E3DF",
-                        },
-                      ];
+      {/* State A: Single Observation (Do not render a misleading trend line) */}
+      {isSingleObservation ? (
+        <div className="terminal-single-history-card">
+          <div className="terminal-single-history-header">
+            <span className="single-history-badge monospace">DISCRETE SINGLE EVALUATION</span>
+            <span className="single-history-month monospace">{sortedHistory[0].report_month}</span>
+          </div>
+
+          <div className="terminal-single-history-grid">
+            <div className="single-history-metric">
+              <span className="single-metric-label">OPERATIONAL RISK</span>
+              <span className="single-metric-val monospace font-bold">
+                {(sortedHistory[0].risk_probability * 100).toFixed(1)}%
+              </span>
+            </div>
+
+            <div className="single-history-metric">
+              <span className="single-metric-label">RAW PROBABILITY</span>
+              <span className="single-metric-val monospace muted">
+                {(sortedHistory[0].raw_probability * 100).toFixed(1)}%
+              </span>
+            </div>
+
+            <div className="single-history-metric">
+              <span className="single-metric-label">PORTFOLIO RANK</span>
+              <span className="single-metric-val monospace">#{sortedHistory[0].risk_rank}</span>
+            </div>
+
+            <div className="single-history-metric">
+              <span className="single-metric-label">PERCENTILE</span>
+              <span className="single-metric-val monospace">
+                P{(sortedHistory[0].risk_percentile * 100).toFixed(1)}
+              </span>
+            </div>
+
+            <div className="single-history-metric">
+              <span className="single-metric-label">MODEL & REGIME</span>
+              <span className="single-metric-val monospace">
+                {sortedHistory[0].regime} ({sortedHistory[0].model_id})
+              </span>
+            </div>
+
+            <div className="single-history-metric">
+              <span className="single-metric-label">CALIBRATION</span>
+              <span className="single-metric-val monospace">
+                {sortedHistory[0].calibration_active ? "ACTIVE" : "RAW / UNCALIBRATED"}
+              </span>
+            </div>
+          </div>
+
+          <p className="terminal-single-history-note monospace">
+            Only a single historical evaluation is recorded for this project. Longitudinal trajectory charts require multiple observation periods to establish a trend without manufacturing synthetic points.
+          </p>
+        </div>
+      ) : (
+        /* State B: Multi-Observation Longitudinal Line Chart */
+        <div className="terminal-history-chart-wrapper">
+          <div style={{ width: "100%", height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <ComposedChart
+                data={chartData}
+                margin={{ top: 16, right: 16, left: -20, bottom: 4 }}
+                syncId="iris-terminal-history"
+              >
+                <CartesianGrid stroke="#E2E3DF" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: "#606460", fontSize: 10, fontFamily: "var(--font-mono)" }}
+                  stroke="#E2E3DF"
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fill: "#606460", fontSize: 10, fontFamily: "var(--font-mono)" }}
+                  stroke="#E2E3DF"
+                  tickFormatter={(v) => `${v}%`}
+                />
+                <Tooltip
+                  content={
+                    <IrisChartTooltip
+                      titlePrefix="ASSESSMENT MONTH"
+                      customFormatter={(payload) => {
+                        const entry = Array.isArray(payload) ? payload[0]?.payload : undefined;
+                        if (!entry) return [];
+                        return [
+                          {
+                            label: "CALIBRATED RISK",
+                            value: `${entry.calibratedRisk}%`,
+                            color: "#1A3C2B",
+                            subtext: entry.calibrationActive
+                              ? "Operational calibrated risk"
+                              : "Uncalibrated raw probability",
+                          },
+                          {
+                            label: "RAW PROBABILITY",
+                            value: `${entry.rawProbability}%`,
+                            color: "#8A8E8A",
+                          },
+                          {
+                            label: "PORTFOLIO RANK",
+                            value: `#${entry.rank}`,
+                            color: "#FFFFFF",
+                          },
+                          {
+                            label: "PERCENTILE",
+                            value: `P${entry.percentile}`,
+                            color: "#FFFFFF",
+                          },
+                          {
+                            label: "REGIME",
+                            value: entry.regime,
+                            color: "#E2E3DF",
+                          },
+                          {
+                            label: "MODEL ID",
+                            value: entry.modelId,
+                            color: "#E2E3DF",
+                          },
+                          {
+                            label: "CALIBRATION",
+                            value: entry.calibrationActive ? "ACTIVE" : "RAW (INACTIVE)",
+                            color: entry.calibrationActive ? "#92C2B0" : "#E2E3DF",
+                          },
+                        ];
+                      }}
+                    />
+                  }
+                />
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  wrapperStyle={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "9px",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    paddingBottom: "8px",
+                  }}
+                />
+
+                {/* Dynamic Transition Reference Lines */}
+                {transitions.map((t) => (
+                  <ReferenceLine
+                    key={`trans-${t.month}`}
+                    x={t.month}
+                    stroke="#B45309"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                    label={{
+                      value: `TRANSITION: ${t.fromRegime} → ${t.toRegime}`,
+                      position: "insideTopRight",
+                      fill: "#78350F",
+                      fontSize: 9,
+                      fontFamily: "var(--font-mono)",
+                      fontWeight: 700,
                     }}
                   />
-                }
-              />
-              <Legend
-                verticalAlign="top"
-                align="right"
-                wrapperStyle={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "9px",
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  paddingBottom: "8px",
-                }}
-              />
-              <Line
-                type="linear"
-                dataKey="calibratedRisk"
-                name="Calibrated Risk"
-                stroke="#1A3C2B"
-                strokeWidth={2}
-                dot={{ r: 3.5, fill: "#1A3C2B", stroke: "#FFFFFF", strokeWidth: 1.5 }}
-                activeDot={{ r: 5, fill: "#1A3C2B", stroke: "#FFFFFF", strokeWidth: 2 }}
-                isAnimationActive={false}
-              />
-              <Line
-                type="linear"
-                dataKey="rawProbability"
-                name="Raw Probability"
-                stroke="#8A8E8A"
-                strokeWidth={1.5}
-                strokeDasharray="4 2"
-                dot={{ r: 2.5, fill: "#8A8E8A", stroke: "#FFFFFF", strokeWidth: 1 }}
-                activeDot={{ r: 4, fill: "#1A3C2B", stroke: "#FFFFFF", strokeWidth: 1.5 }}
-                isAnimationActive={false}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+                ))}
 
-      {/* Chronological Table */}
+                <Line
+                  type="linear"
+                  dataKey="calibratedRisk"
+                  name="Calibrated Risk"
+                  stroke="#1A3C2B"
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: "#1A3C2B", stroke: "#FFFFFF", strokeWidth: 1.5 }}
+                  activeDot={{ r: 6, fill: "#1A3C2B", stroke: "#FFFFFF", strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="linear"
+                  dataKey="rawProbability"
+                  name="Raw Probability"
+                  stroke="#8A8E8A"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 2"
+                  dot={{ r: 3, fill: "#8A8E8A", stroke: "#FFFFFF", strokeWidth: 1 }}
+                  activeDot={{ r: 5, fill: "#1A3C2B", stroke: "#FFFFFF", strokeWidth: 1.5 }}
+                  isAnimationActive={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Chronological Table as Accessible Alternative */}
       <div className="terminal-history-table-wrap">
         <table className="terminal-history-table" aria-label="Chronological risk history">
           <thead>

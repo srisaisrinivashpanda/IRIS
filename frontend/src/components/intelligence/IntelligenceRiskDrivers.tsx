@@ -1,17 +1,18 @@
 import React from "react";
 import type { ProjectRiskDrivers } from "@/types/project.ts";
+import { IrisSignedDriversChart } from "@/components/common/charts/IrisSignedDriversChart.tsx";
 
 interface IntelligenceRiskDriversProps {
   drivers: ProjectRiskDrivers;
 }
 
 export const IntelligenceRiskDrivers: React.FC<IntelligenceRiskDriversProps> = ({ drivers }) => {
-  const hasPositive = drivers.top_positive && drivers.top_positive.length > 0;
-  const hasNegative = drivers.top_negative && drivers.top_negative.length > 0;
+  const hasPositive = Boolean(drivers.top_positive && drivers.top_positive.length > 0);
+  const hasNegative = Boolean(drivers.top_negative && drivers.top_negative.length > 0);
   const hasDrivers =
     hasPositive ||
     hasNegative ||
-    (drivers.strongest_drivers && drivers.strongest_drivers.length > 0);
+    Boolean(drivers.strongest_drivers && drivers.strongest_drivers.length > 0);
 
   if (!hasDrivers) {
     return (
@@ -30,6 +31,10 @@ export const IntelligenceRiskDrivers: React.FC<IntelligenceRiskDriversProps> = (
     );
   }
 
+  const posCount = drivers.top_positive?.length || 0;
+  const negCount = drivers.top_negative?.length || 0;
+  const chartHeight = Math.max(180, (posCount + negCount) * 36 + 48);
+
   return (
     <div className="terminal-card">
       <div className="terminal-card-header">
@@ -40,11 +45,27 @@ export const IntelligenceRiskDrivers: React.FC<IntelligenceRiskDriversProps> = (
         <span className="terminal-badge-muted monospace">RAW MARGIN LOGIT SPACE</span>
       </div>
 
+      {/* Diverging Bar Chart Representation */}
+      <div className="terminal-driver-chart-wrapper">
+        <div className="terminal-driver-axis-guide monospace">
+          <span className="driver-guide-neg">◀ RISK-REDUCING (- MARGIN LOGIT)</span>
+          <span className="driver-guide-zero">0.0 BASELINE</span>
+          <span className="driver-guide-pos">RISK-INCREASING (+ MARGIN LOGIT) ▶</span>
+        </div>
+
+        <IrisSignedDriversChart
+          positiveContributors={drivers.top_positive}
+          negativeContributors={drivers.top_negative}
+          height={chartHeight}
+        />
+      </div>
+
+      {/* Accessible Detailed Dual-Column Breakdown */}
       <div className="terminal-drivers-dual-col">
         {/* Risk-Increasing Drivers */}
         <div className="terminal-drivers-column">
           <div className="terminal-drivers-col-header increasing">
-            ▲ RISK-INCREASING CONTRIBUTORS ({drivers.top_positive?.length || 0})
+            ▲ RISK-INCREASING CONTRIBUTORS ({posCount})
           </div>
           {hasPositive ? (
             <div className="terminal-drivers-list">
@@ -72,7 +93,7 @@ export const IntelligenceRiskDrivers: React.FC<IntelligenceRiskDriversProps> = (
         {/* Risk-Decreasing Drivers */}
         <div className="terminal-drivers-column">
           <div className="terminal-drivers-col-header decreasing">
-            ▼ RISK-DECREASING CONTRIBUTORS ({drivers.top_negative?.length || 0})
+            ▼ RISK-DECREASING CONTRIBUTORS ({negCount})
           </div>
           {hasNegative ? (
             <div className="terminal-drivers-list">

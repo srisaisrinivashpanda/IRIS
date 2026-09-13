@@ -14,6 +14,11 @@ export const IntelligenceTerminalHeader: React.FC<IntelligenceTerminalHeaderProp
   snapshotReportMonth,
   riskReportMonth,
 }) => {
+  const isCoincident =
+    Boolean(snapshotReportMonth && riskReportMonth && snapshotReportMonth === riskReportMonth);
+  const isDivergent =
+    Boolean(snapshotReportMonth && riskReportMonth && snapshotReportMonth !== riskReportMonth);
+
   return (
     <div className="terminal-header-card">
       <div className="terminal-header-top">
@@ -71,16 +76,58 @@ export const IntelligenceTerminalHeader: React.FC<IntelligenceTerminalHeaderProp
 
       {/* Temporal Boundary Strip: Snapshot Month vs Risk Assessment Month */}
       <div className="terminal-temporal-strip" aria-label="Evaluation cycle provenance">
-        <div className="terminal-temporal-item">
-          <span className="temporal-key">PROJECT SNAPSHOT MONTH:</span>
-          <span className="temporal-val monospace">{snapshotReportMonth || "—"}</span>
+        <div className="terminal-temporal-content">
+          <div className="terminal-temporal-item">
+            <span className="temporal-key">PROJECT SNAPSHOT MONTH:</span>
+            <span className="temporal-val monospace">{snapshotReportMonth || "—"}</span>
+          </div>
+          <span className="terminal-temporal-separator" aria-hidden="true">
+            /
+          </span>
+          <div className="terminal-temporal-item">
+            <span className="temporal-key">RISK ASSESSMENT MONTH:</span>
+            <span className="temporal-val monospace">{riskReportMonth || "NOT ASSESSED"}</span>
+          </div>
         </div>
-        <span className="temporal-separator" aria-hidden="true">
-          /
-        </span>
-        <div className="terminal-temporal-item">
-          <span className="temporal-key">RISK ASSESSMENT MONTH:</span>
-          <span className="temporal-val monospace">{riskReportMonth || "NOT ASSESSED"}</span>
+
+        {/* Visual Temporal Markers */}
+        <div className="terminal-temporal-markers" aria-hidden="true">
+          <div className="temporal-marker-row">
+            <span className="marker-row-label monospace">SNAPSHOT</span>
+            <div className="marker-track">
+              <div className="marker-point active">
+                <span className="marker-dot" />
+                <span className="marker-text monospace">{snapshotReportMonth || "—"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="temporal-marker-row">
+            <span className="marker-row-label monospace">ASSESSMENT</span>
+            <div className="marker-track">
+              {riskReportMonth ? (
+                <div className={`marker-point ${isCoincident ? "coincident" : "divergent"}`}>
+                  <span className="marker-dot" />
+                  <span className="marker-text monospace">{riskReportMonth}</span>
+                </div>
+              ) : (
+                <div className="marker-point unassessed">
+                  <span className="marker-text monospace">NOT ASSESSED</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {isDivergent && (
+            <span className="temporal-alignment-tag divergent monospace">
+              TEMPORAL ALIGNMENT: Distinct evaluation cycles ({riskReportMonth} model assessment vs {snapshotReportMonth} physical snapshot)
+            </span>
+          )}
+          {isCoincident && (
+            <span className="temporal-alignment-tag coincident monospace">
+              TEMPORAL ALIGNMENT: Synchronized evaluation cycle ({snapshotReportMonth})
+            </span>
+          )}
         </div>
       </div>
     </div>

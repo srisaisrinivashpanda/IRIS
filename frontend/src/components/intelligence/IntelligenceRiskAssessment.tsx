@@ -1,5 +1,7 @@
 import React from "react";
 import type { ProjectIntelligenceRisk } from "@/types/project.ts";
+import { IntelligenceRiskProbabilityScale } from "./IntelligenceRiskProbabilityScale.tsx";
+import { IntelligencePortfolioPosition } from "./IntelligencePortfolioPosition.tsx";
 
 interface IntelligenceRiskAssessmentProps {
   risk: ProjectIntelligenceRisk | null;
@@ -55,6 +57,7 @@ export const IntelligenceRiskAssessment: React.FC<IntelligenceRiskAssessmentProp
         </div>
       </div>
 
+      {/* Metrics Grid */}
       <div className="terminal-metrics-grid">
         {/* Risk Probability */}
         <div className="terminal-metric-cell primary-stat">
@@ -85,6 +88,22 @@ export const IntelligenceRiskAssessment: React.FC<IntelligenceRiskAssessmentProp
           <div className="metric-cell-val monospace date">{risk.report_month}</div>
           <span className="metric-cell-sub monospace">TARGET: {risk.target}</span>
         </div>
+      </div>
+
+      {/* Visual Analytical Scales: Probability Scale & Portfolio Position */}
+      <div className="terminal-assessment-visual-block">
+        <IntelligenceRiskProbabilityScale
+          probability={risk.risk_probability}
+          rawProbability={risk.calibration_active ? risk.raw_probability : null}
+          calibrationActive={risk.calibration_active}
+          ariaLabel="Current schedule extension risk"
+        />
+
+        <IntelligencePortfolioPosition
+          rank={risk.risk_rank}
+          populationSize={risk.population_size}
+          percentile={risk.risk_percentile}
+        />
       </div>
 
       <div className="terminal-card-footer-meta">
