@@ -1668,3 +1668,189 @@
   border-radius: 2px;
 }
 
+/* ==========================================================================
+   Analytics Investigation Context Banner (PR-15)
+   Truthful, evidence-grounded cross-workspace investigation banner
+   ========================================================================== */
+
+.projects-context-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  background-color: var(--color-surface-container-low, #f4f6f4);
+  border: 1px solid var(--color-border-hairline, #e2e8e0);
+  border-left: 3px solid var(--color-primary-800, #1b3d2f);
+  margin-bottom: 4px;
+}
+
+.projects-context-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.projects-context-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.projects-context-icon {
+  color: var(--color-primary-800, #1b3d2f);
+  flex-shrink: 0;
+}
+
+.projects-context-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-primary-800, #1b3d2f);
+  text-transform: uppercase;
+}
+
+.projects-context-source-badge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  background-color: #e8f0ec;
+  border: 1px solid #c8dcce;
+  color: var(--color-primary-900, #14281d);
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.projects-context-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.projects-context-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border-hairline, #d0d7de);
+  color: var(--color-primary-950, #14281d);
+  text-decoration: none;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.projects-context-back-btn:hover {
+  background-color: var(--color-primary-800, #1b3d2f);
+  border-color: var(--color-primary-800, #1b3d2f);
+  color: #ffffff;
+}
+
+.projects-context-dismiss-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #718096;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.projects-context-dismiss-btn:hover {
+  color: #1a202c;
+  background-color: #e2e8f0;
+}
+
+.projects-context-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-variant, #4a5568);
+}
+
+.projects-context-summary-line {
+  color: #2d3748;
+}
+
+.projects-context-summary-line strong {
+  color: var(--color-primary-950, #14281d);
+}
+
+.projects-context-transferred-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.projects-context-strip-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #718096;
+}
+
+.projects-context-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.projects-context-pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  background-color: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 2px;
+  color: #1a202c;
+}
+
+.projects-context-pill strong {
+  color: var(--color-primary-800, #1b3d2f);
+  font-weight: 700;
+}
+
+.projects-context-empty-hint {
+  font-size: 11px;
+}
+
+.projects-context-omitted-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #fefcf3;
+  border: 1px solid #ecc94b;
+  border-radius: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #744210;
+}
+
+.projects-context-info-icon {
+  color: #b7791f;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.projects-context-omitted-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+

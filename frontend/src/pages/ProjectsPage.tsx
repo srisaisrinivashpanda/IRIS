@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects, fetchFilterOptions } from "@/api/projects.ts";
 import { fetchDatasetInfo } from "@/api/system.ts";
@@ -23,6 +23,7 @@ import { ProjectTable } from "@/components/projects/ProjectTable.tsx";
 import { ProjectPagination } from "@/components/projects/ProjectPagination.tsx";
 import { ProjectInspectionDrawer } from "@/components/projects/ProjectInspectionDrawer.tsx";
 import { ProjectsEvidenceAndLimitations } from "@/components/projects/ProjectsEvidenceAndLimitations.tsx";
+import { ProjectsContextBanner } from "@/components/projects/ProjectsContextBanner.tsx";
 import type { ProjectSummaryItem, SortByFields, SortOrder, ProjectListQueryParams } from "@/types/project.ts";
 import { ShieldCheck, AlertCircle } from "lucide-react";
 import { usePageEnter } from "@/lib/motion/useMotion.ts";
@@ -30,8 +31,11 @@ import { usePageEnter } from "@/lib/motion/useMotion.ts";
 export const ProjectsPage: React.FC = () => {
   const containerRef = usePageEnter<HTMLDivElement>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [inspectingProject, setInspectingProject] = useState<ProjectSummaryItem | null>(null);
   const pageSize = 25;
+
+  const isInvestigation = (location.state as { source?: string } | null)?.source === "analytics" || searchParams.get("source") === "analytics" || searchParams.get("from") === "analytics";
 
   // Derive authoritative filter parameters strictly from URL query parameters (Correction 1)
   const filters: Filters = useMemo(() => {
@@ -172,7 +176,9 @@ export const ProjectsPage: React.FC = () => {
         {/* Page Intro Hero Section */}
         <section className="projects-intro-section">
           <div className="projects-intro-left">
-            <div className="projects-breadcrumb">IRIS / PROJECTS / DISCOVERY</div>
+            <div className="projects-breadcrumb" data-testid="projects-breadcrumb">
+              {isInvestigation ? "IRIS / ANALYTICS / PROJECTS INVESTIGATION" : "IRIS / PROJECTS / DISCOVERY"}
+            </div>
             <h1 className="projects-main-title">PROJECTS. FIND THE SIGNAL.</h1>
             <p className="projects-description">
               Search and examine infrastructure projects across the monitored portfolio, reporting history, sectors, agencies, and states.
@@ -198,6 +204,9 @@ export const ProjectsPage: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {/* Investigation Context Banner (PR-15) */}
+        <ProjectsContextBanner />
 
         {/* Section 01: Portfolio Snapshot & Taxonomy Telemetry */}
         <PortfolioSnapshot
