@@ -207,6 +207,8 @@ export const AnalyticsPage: React.FC = () => {
         isError={isTrendsError}
         error={trendsError}
         onRetry={() => refetchTrends()}
+        globalFilters={globalFilters}
+        riskFilters={riskFilters}
       />
 
       {/* 3-Column Categorical & Geographic Cross-Filtering Row */}
@@ -219,6 +221,8 @@ export const AnalyticsPage: React.FC = () => {
           isError={isGeographyError}
           error={geographyError}
           onRetry={() => refetchGeography()}
+          globalFilters={globalFilters}
+          riskFilters={riskFilters}
         />
 
         <AnalyticsSectors
@@ -229,6 +233,8 @@ export const AnalyticsPage: React.FC = () => {
           isError={isSectorsError}
           error={sectorsError}
           onRetry={() => refetchSectors()}
+          globalFilters={globalFilters}
+          riskFilters={riskFilters}
         />
 
         <AnalyticsAgencies
@@ -239,6 +245,8 @@ export const AnalyticsPage: React.FC = () => {
           isError={isAgenciesError}
           error={agenciesError}
           onRetry={() => refetchAgencies()}
+          globalFilters={globalFilters}
+          riskFilters={riskFilters}
         />
       </div>
 
@@ -258,6 +266,8 @@ export const AnalyticsPage: React.FC = () => {
         isError={isProgressError}
         error={progressError}
         onRetry={() => refetchProgress()}
+        globalFilters={globalFilters}
+        riskFilters={riskFilters}
       />
 
       {/* Production Schedule-Extension Risk Analysis */}
@@ -269,6 +279,8 @@ export const AnalyticsPage: React.FC = () => {
         isError={isRiskError}
         error={riskError}
         onRetry={() => refetchRisk()}
+        globalFilters={globalFilters}
+        riskFilters={riskFilters}
       />
 
       {/* Observational Coverage & Missingness Audit Footer */}

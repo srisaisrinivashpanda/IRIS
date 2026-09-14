@@ -8,10 +8,12 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import type { SectorsResponse } from "@/types/analytics.ts";
+import type { SectorsResponse, GlobalAnalyticsFilters, RiskAnalyticsFilters } from "@/types/analytics.ts";
 import { IrisChartTooltip, type IrisTooltipItem } from "@/components/common/charts/IrisChartTooltip.tsx";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner.tsx";
 import { AlertTriangle, Layers, Table as TableIcon } from "lucide-react";
+import { buildInvestigationPackage } from "@/utils/analyticsProjectNavigation.ts";
+import { AnalyticsInvestigationAction } from "./AnalyticsInvestigationAction.tsx";
 
 interface AnalyticsSectorsProps {
   data?: SectorsResponse;
@@ -21,6 +23,8 @@ interface AnalyticsSectorsProps {
   isError: boolean;
   error?: Error | null;
   onRetry?: () => void;
+  globalFilters?: GlobalAnalyticsFilters;
+  riskFilters?: RiskAnalyticsFilters;
 }
 
 export const AnalyticsSectors: React.FC<AnalyticsSectorsProps> = ({
@@ -31,6 +35,8 @@ export const AnalyticsSectors: React.FC<AnalyticsSectorsProps> = ({
   isError,
   error,
   onRetry,
+  globalFilters,
+  riskFilters,
 }) => {
   const [showTable, setShowTable] = useState(false);
 
@@ -123,17 +129,27 @@ export const AnalyticsSectors: React.FC<AnalyticsSectorsProps> = ({
 
         <div className="analytics-view-controls">
           {selectedSector && (
-            <span className="analytics-filter-active-pill">
-              FILTER: {selectedSector}
-              <button
-                type="button"
-                className="analytics-filter-clear-pill-btn"
-                onClick={() => onToggleSector(selectedSector)}
-                aria-label={`Clear ${selectedSector} filter`}
-              >
-                ×
-              </button>
-            </span>
+            <>
+              <span className="analytics-filter-active-pill">
+                FILTER: {selectedSector}
+                <button
+                  type="button"
+                  className="analytics-filter-clear-pill-btn"
+                  onClick={() => onToggleSector(selectedSector)}
+                  aria-label={`Clear ${selectedSector} filter`}
+                >
+                  ×
+                </button>
+              </span>
+              <AnalyticsInvestigationAction
+                url={buildInvestigationPackage({ globalFilters, riskFilters, overrideSector: selectedSector }).url}
+                context={buildInvestigationPackage({ globalFilters, riskFilters, overrideSector: selectedSector }).context}
+                label="INVESTIGATE SECTOR"
+                variant="pill-btn"
+                ariaLabel={`Investigate compatible projects in ${selectedSector} sector`}
+                dataTestId="investigate-selected-sector"
+              />
+            </>
           )}
           <button
             type="button"
@@ -168,6 +184,11 @@ export const AnalyticsSectors: React.FC<AnalyticsSectorsProps> = ({
             <tbody>
               {items.map((row) => {
                 const isSelected = selectedSector?.toUpperCase() === row.sector.toUpperCase();
+                const nav = buildInvestigationPackage({
+                  globalFilters,
+                  riskFilters,
+                  overrideSector: row.sector,
+                });
                 return (
                   <tr key={row.sector} className={isSelected ? "analytics-table-row-selected" : ""}>
                     <td className="monospace font-bold">{row.sector}</td>
@@ -176,14 +197,23 @@ export const AnalyticsSectors: React.FC<AnalyticsSectorsProps> = ({
                     <td>{row.total_cumulative_expenditure != null ? row.total_cumulative_expenditure.toFixed(2) : "—"}</td>
                     <td>{row.average_physical_progress != null ? `${row.average_physical_progress.toFixed(1)}%` : "Unavailable"}</td>
                     <td>
-                      <button
-                        type="button"
-                        className="analytics-table-action-btn"
-                        onClick={() => onToggleSector(row.sector)}
-                        aria-pressed={isSelected}
-                      >
-                        {isSelected ? "REMOVE FILTER" : "FILTER BY SECTOR"}
-                      </button>
+                      <div className="analytics-table-actions-cell">
+                        <button
+                          type="button"
+                          className="analytics-table-action-btn"
+                          onClick={() => onToggleSector(row.sector)}
+                          aria-pressed={isSelected}
+                        >
+                          {isSelected ? "REMOVE FILTER" : "FILTER BY SECTOR"}
+                        </button>
+                        <AnalyticsInvestigationAction
+                          url={nav.url}
+                          context={nav.context}
+                          label="INVESTIGATE PROJECTS"
+                          ariaLabel={`Investigate compatible projects in ${row.sector} sector`}
+                          dataTestId={`investigate-sector-${row.sector}`}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

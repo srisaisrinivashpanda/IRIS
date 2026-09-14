@@ -9,10 +9,12 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import type { RiskAnalyticsResponse, ScoreDistribution } from "@/types/analytics.ts";
+import type { RiskAnalyticsResponse, ScoreDistribution, GlobalAnalyticsFilters, RiskAnalyticsFilters } from "@/types/analytics.ts";
 import { IrisChartTooltip, type IrisTooltipItem } from "@/components/common/charts/IrisChartTooltip.tsx";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner.tsx";
 import { AlertTriangle, ShieldCheck, Info, Table as TableIcon } from "lucide-react";
+import { buildInvestigationPackage } from "@/utils/analyticsProjectNavigation.ts";
+import { AnalyticsInvestigationAction } from "./AnalyticsInvestigationAction.tsx";
 
 interface AnalyticsRiskProps {
   data?: RiskAnalyticsResponse;
@@ -22,6 +24,8 @@ interface AnalyticsRiskProps {
   isError: boolean;
   error?: Error | null;
   onRetry?: () => void;
+  globalFilters?: GlobalAnalyticsFilters;
+  riskFilters?: RiskAnalyticsFilters;
 }
 
 export const AnalyticsRisk: React.FC<AnalyticsRiskProps> = ({
@@ -32,6 +36,8 @@ export const AnalyticsRisk: React.FC<AnalyticsRiskProps> = ({
   isError,
   error,
   onRetry,
+  globalFilters,
+  riskFilters,
 }) => {
   const [showTable, setShowTable] = useState(false);
 
@@ -277,17 +283,34 @@ export const AnalyticsRisk: React.FC<AnalyticsRiskProps> = ({
                   <th scope="col">ASSESSED PROJECTS</th>
                   <th scope="col">CALIBRATED RISK MEAN (%)</th>
                   <th scope="col">RAW PROBABILITY MEAN (%)</th>
+                  <th scope="col">ACTION</th>
                 </tr>
               </thead>
               <tbody>
-                {monthlyTrends.map((row) => (
-                  <tr key={row.evaluation_month}>
-                    <td className="monospace font-bold">{row.evaluation_month}</td>
-                    <td>{row.assessed_project_count.toLocaleString()}</td>
-                    <td>{row.mean_risk_probability != null ? `${(row.mean_risk_probability * 100).toFixed(1)}%` : "—"}</td>
-                    <td>{row.mean_raw_probability != null ? `${(row.mean_raw_probability * 100).toFixed(1)}%` : "—"}</td>
-                  </tr>
-                ))}
+                {monthlyTrends.map((row) => {
+                  const nav = buildInvestigationPackage({
+                    globalFilters,
+                    riskFilters,
+                    overrideReportMonth: row.evaluation_month,
+                  });
+                  return (
+                    <tr key={row.evaluation_month}>
+                      <td className="monospace font-bold">{row.evaluation_month}</td>
+                      <td>{row.assessed_project_count.toLocaleString()}</td>
+                      <td>{row.mean_risk_probability != null ? `${(row.mean_risk_probability * 100).toFixed(1)}%` : "—"}</td>
+                      <td>{row.mean_raw_probability != null ? `${(row.mean_raw_probability * 100).toFixed(1)}%` : "—"}</td>
+                      <td>
+                        <AnalyticsInvestigationAction
+                          url={nav.url}
+                          context={nav.context}
+                          label="INVESTIGATE MONTH"
+                          ariaLabel={`Investigate compatible projects for evaluation month ${row.evaluation_month}`}
+                          dataTestId={`risk-investigate-month-${row.evaluation_month}`}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

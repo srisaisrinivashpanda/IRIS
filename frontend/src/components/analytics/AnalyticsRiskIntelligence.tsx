@@ -7,7 +7,8 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import type { RiskAnalyticsResponse, ScoreDistribution } from "@/types/analytics.ts";
+import type { RiskAnalyticsResponse, ScoreDistribution, GlobalAnalyticsFilters, RiskAnalyticsFilters } from "@/types/analytics.ts";
+import { buildInvestigationPackage } from "@/utils/analyticsProjectNavigation.ts";
 
 interface AnalyticsRiskIntelligenceProps {
   risk?: RiskAnalyticsResponse;
@@ -15,6 +16,8 @@ interface AnalyticsRiskIntelligenceProps {
   activeProjectCode?: string | null;
   onSelectRegime?: (regime: string | null) => void;
   isLoading?: boolean;
+  globalFilters?: GlobalAnalyticsFilters;
+  riskFilters?: RiskAnalyticsFilters;
 }
 
 const renderQuantiles = (dist: ScoreDistribution | null | undefined, label: string, testId: string) => {
@@ -66,6 +69,8 @@ export const AnalyticsRiskIntelligence: React.FC<AnalyticsRiskIntelligenceProps>
   activeProjectCode,
   onSelectRegime,
   isLoading = false,
+  globalFilters,
+  riskFilters,
 }) => {
   if (isLoading) {
     return (
@@ -83,6 +88,11 @@ export const AnalyticsRiskIntelligence: React.FC<AnalyticsRiskIntelligenceProps>
   const governanceNotice =
     risk?.governance_notice ??
     "Risk statistics represent model-estimated probability of 3-month schedule extension for active projects under production regime models. Unserved targets (cost overrun, progress stagnation) are unavailable. Denominator represents authentic risk-serving records.";
+
+  const compatibleNav = buildInvestigationPackage({
+    globalFilters,
+    riskFilters,
+  });
 
   return (
     <div className="analytics-intel-card" data-testid="analytics-risk-intelligence">
@@ -184,6 +194,15 @@ export const AnalyticsRiskIntelligence: React.FC<AnalyticsRiskIntelligenceProps>
                 data-testid="link-intelligence-terminal"
               >
                 OPEN INTELLIGENCE TERMINAL →
+              </Link>
+              <Link
+                to={compatibleNav.url}
+                state={compatibleNav.context}
+                className="intel-action-btn secondary"
+                data-testid="link-compatible-projects"
+                title="View compatible project population under supported filter contract (risk regime is excluded)"
+              >
+                VIEW COMPATIBLE PROJECTS →
               </Link>
               {activeProjectCode && (
                 <>

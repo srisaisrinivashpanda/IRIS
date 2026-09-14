@@ -189,6 +189,8 @@ export const AnalyticsIntelligence: React.FC<AnalyticsIntelligenceProps> = ({
           onToggleSector={(sec) => toggleFilter?.("sector", sec)}
           onToggleAgency={(ag) => toggleFilter?.("agency", ag)}
           isLoading={isLoading}
+          globalFilters={globalFilters}
+          riskFilters={riskFilters}
         />
 
         {/* Financial Commitments & Physical Progress */}
@@ -205,6 +207,8 @@ export const AnalyticsIntelligence: React.FC<AnalyticsIntelligenceProps> = ({
           activeProjectCode={globalFilters.project_code}
           onSelectRegime={(reg) => setFilter?.("regime", reg)}
           isLoading={isLoading}
+          globalFilters={globalFilters}
+          riskFilters={riskFilters}
         />
       </div>
 
