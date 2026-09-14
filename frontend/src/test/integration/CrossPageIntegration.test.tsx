@@ -12,10 +12,22 @@ import { IntelligencePage } from "@/pages/IntelligencePage.tsx";
 import * as systemApi from "@/api/system.ts";
 import * as projectApi from "@/api/projects.ts";
 import * as riskApi from "@/api/risk.ts";
+import * as analyticsApi from "@/api/analytics.ts";
 
 vi.mock("@/api/system.ts", () => ({
   fetchHealth: vi.fn(),
   fetchDatasetInfo: vi.fn(),
+}));
+
+vi.mock("@/api/analytics.ts", () => ({
+  fetchAnalyticsOverview: vi.fn(),
+  fetchAnalyticsTrends: vi.fn(),
+  fetchAnalyticsGeography: vi.fn(),
+  fetchAnalyticsSectors: vi.fn(),
+  fetchAnalyticsAgencies: vi.fn(),
+  fetchAnalyticsFinancials: vi.fn(),
+  fetchAnalyticsProgress: vi.fn(),
+  fetchAnalyticsRisk: vi.fn(),
 }));
 
 vi.mock("@/api/projects.ts", () => ({
@@ -285,6 +297,129 @@ describe("IRIS Cross-Page Integration & Full Navigation Graph", () => {
       total: 0,
       items: [],
     });
+
+    vi.mocked(analyticsApi.fetchAnalyticsOverview).mockResolvedValue({
+      unique_project_count: 2189,
+      observation_count: 45000,
+      earliest_observation_month: "2023-01",
+      latest_observation_month: "2026-07",
+      states_count: 28,
+      agencies_count: 50,
+      sectors_count: 14,
+      districts_count: null,
+      total_sanctioned_cost: 100000,
+      total_revised_cost: 120000,
+      total_cumulative_expenditure: 80000,
+      average_physical_progress: 68.5,
+      progress_reporting_observations: 30000,
+      assessed_project_count: 1200,
+      financial_basis: "LATEST_OBSERVATION",
+      progress_basis: "REPORTING_ONLY",
+      coverage: {
+        total_observations: 45000,
+        unique_projects: 2189,
+        earliest_month: "2023-01",
+        latest_month: "2026-07",
+        missing_original_cost_count: 0,
+        missing_revised_cost_count: 0,
+        missing_cumulative_expenditure_count: 0,
+        missing_physical_progress_count: 0,
+        unavailable_dimensions: { district: "STRUCTURALLY_UNAVAILABLE" },
+      },
+    });
+
+    vi.mocked(analyticsApi.fetchAnalyticsRisk).mockResolvedValue({
+      target: "target_effective_schedule_ext_3m",
+      target_label: "Schedule Extension (H=3)",
+      assessed_project_count: 1200,
+      assessed_observation_count: 25000,
+      evaluation_earliest_month: "2024-06",
+      evaluation_latest_month: "2026-04",
+      calibrated_risk_distribution: {
+        minimum: 0.05,
+        p25: 0.22,
+        median: 0.38,
+        p75: 0.58,
+        p90: 0.72,
+        p95: 0.85,
+        maximum: 0.98,
+        mean: 0.40,
+      },
+      raw_probability_distribution: {
+        minimum: 0.04,
+        p25: 0.20,
+        median: 0.35,
+        p75: 0.55,
+        p90: 0.70,
+        p95: 0.82,
+        maximum: 0.96,
+        mean: 0.38,
+      },
+      regime_breakdown: [
+        { regime: "MODERN", model_id: "tree_regime_modern", unique_project_count: 1200, observation_count: 25000, calibration_active_count: 1 },
+      ],
+      monthly_trend: [],
+      governance_notice: "Audited model serving.",
+      unserved_targets: ["cost_overrun", "progress_stagnation"],
+    });
+
+    vi.mocked(analyticsApi.fetchAnalyticsTrends).mockResolvedValue({
+      items: [
+        {
+          report_month: "2026-04",
+          observation_count: 1500,
+          unique_project_count: 1200,
+          total_cumulative_expenditure: 80000,
+          average_cumulative_expenditure: 66.6,
+          total_original_cost: 100000,
+          total_revised_cost: 120000,
+          average_physical_progress: 68.5,
+          progress_reporting_count: 1200,
+          risk_assessed_project_count: 1200,
+          average_risk_probability: 0.40,
+          average_raw_probability: 0.38,
+        },
+      ],
+      total_months: 1,
+      earliest_month: "2026-04",
+      latest_month: "2026-04",
+      disclaimer: "Observed months only",
+    });
+
+    vi.mocked(analyticsApi.fetchAnalyticsGeography).mockResolvedValue({
+      items: [
+        {
+          state: "Maharashtra",
+          unique_project_count: 350,
+          observation_count: 4500,
+          total_cumulative_expenditure: 25000,
+          average_physical_progress: 72.0,
+          progress_reporting_count: 300,
+          assessed_project_count: 250,
+          average_risk_probability: 0.35,
+        },
+      ],
+      total_states: 1,
+      district_dimension_status: "UNAVAILABLE",
+      district_dimension_reason: "Omitted",
+    });
+
+    vi.mocked(analyticsApi.fetchAnalyticsSectors).mockResolvedValue({
+      items: [
+        {
+          sector: "Railways",
+          unique_project_count: 280,
+          observation_count: 3800,
+          total_original_cost: 45000,
+          total_cumulative_expenditure: 32000,
+          average_physical_progress: 75.0,
+          progress_reporting_count: 250,
+          assessed_project_count: 200,
+          average_risk_probability: 0.33,
+        },
+      ],
+      total_sectors: 1,
+    });
   });
 
   const renderAppAt = (initialEntry: string) => {
@@ -361,7 +496,7 @@ describe("IRIS Cross-Page Integration & Full Navigation Graph", () => {
     renderAppAt("/dashboard");
 
     await waitFor(() => {
-      expect(screen.getByText("INFRASTRUCTURE AT A GLANCE.")).toBeInTheDocument();
+      expect(screen.getByText("PORTFOLIO COMMAND CENTER")).toBeInTheDocument();
     });
 
     const overviewNav = screen.getByRole("link", { name: "OVERVIEW" });
@@ -429,41 +564,40 @@ describe("IRIS Cross-Page Integration & Full Navigation Graph", () => {
   });
 
   // 10. Dashboard contextual links to /analytics
-  it("Dashboard provides contextual links to /analytics from Schedule and Cost sections", async () => {
+  it("Dashboard provides contextual links to /analytics from Command Center", async () => {
     renderAppAt("/dashboard");
 
     await waitFor(() => {
-      expect(screen.getByText("INFRASTRUCTURE AT A GLANCE.")).toBeInTheDocument();
+      expect(screen.getByText("PORTFOLIO COMMAND CENTER")).toBeInTheDocument();
     });
 
-    const scheduleAnalyticsLink = screen.getByRole("link", { name: "VIEW SCHEDULE ANALYTICS →" });
-    expect(scheduleAnalyticsLink).toHaveAttribute("href", "/analytics");
-
-    const costAnalyticsLink = screen.getByRole("link", { name: "VIEW COST ANALYTICS →" });
-    expect(costAnalyticsLink).toHaveAttribute("href", "/analytics");
+    const analyticsLinks = screen.getAllByRole("link", { name: /ANALYTICS/i });
+    expect(analyticsLinks.length).toBeGreaterThanOrEqual(1);
+    expect(analyticsLinks.some((l) => l.getAttribute("href") === "/analytics")).toBe(true);
   });
 
   // 11. Dashboard contextual link to /intelligence
-  it("Dashboard provides contextual link to /intelligence from Early Warning section", async () => {
+  it("Dashboard provides contextual link to /intelligence from Command Center", async () => {
     renderAppAt("/dashboard");
 
     await waitFor(() => {
-      expect(screen.getByText("INFRASTRUCTURE AT A GLANCE.")).toBeInTheDocument();
+      expect(screen.getByText("PORTFOLIO COMMAND CENTER")).toBeInTheDocument();
     });
 
-    const fullRiskLink = screen.getByRole("link", { name: "VIEW FULL RISK INTELLIGENCE →" });
-    expect(fullRiskLink).toHaveAttribute("href", "/intelligence");
+    const intelLinks = screen.getAllByRole("link", { name: /INTELLIGENCE/i });
+    expect(intelLinks.length).toBeGreaterThanOrEqual(1);
+    expect(intelLinks.some((l) => l.getAttribute("href") === "/intelligence")).toBe(true);
   });
 
   // 12. Dashboard contextual link to /projects
-  it("Dashboard provides contextual link to /projects from Composition section and project rows", async () => {
+  it("Dashboard provides contextual link to /projects from Command Center and project rows", async () => {
     renderAppAt("/dashboard");
 
     await waitFor(() => {
-      expect(screen.getByText("INFRASTRUCTURE AT A GLANCE.")).toBeInTheDocument();
+      expect(screen.getByText("PORTFOLIO COMMAND CENTER")).toBeInTheDocument();
     });
 
-    const exploreProjectsLink = screen.getByRole("link", { name: "EXPLORE ALL PROJECTS →" });
+    const exploreProjectsLink = screen.getByRole("link", { name: "EXPLORE PROJECTS" });
     expect(exploreProjectsLink).toHaveAttribute("href", "/projects");
 
     await waitFor(() => {
@@ -512,7 +646,7 @@ describe("IRIS Cross-Page Integration & Full Navigation Graph", () => {
     renderAppAt("/dashboard");
 
     await waitFor(() => {
-      expect(screen.getByText("INFRASTRUCTURE AT A GLANCE.")).toBeInTheDocument();
+      expect(screen.getByText("PORTFOLIO COMMAND CENTER")).toBeInTheDocument();
     });
 
     const projectsNavLink = screen.getByRole("link", { name: "01. PROJECTS" });
