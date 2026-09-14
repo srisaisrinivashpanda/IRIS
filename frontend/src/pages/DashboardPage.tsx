@@ -6,7 +6,7 @@ import { fetchDatasetInfo } from "@/api/system.ts";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader.tsx";
 import { DashboardKpiStrip } from "@/components/dashboard/DashboardKpiStrip.tsx";
 import { DashboardRiskCommand } from "@/components/dashboard/DashboardRiskCommand.tsx";
-import { DashboardAttentionPanel } from "@/components/dashboard/DashboardAttentionPanel.tsx";
+import { DashboardEarlyWarning } from "@/components/dashboard/DashboardEarlyWarning.tsx";
 import { DashboardTrendPanel } from "@/components/dashboard/DashboardTrendPanel.tsx";
 import { DashboardConcentration } from "@/components/dashboard/DashboardConcentration.tsx";
 import { DashboardCoverage } from "@/components/dashboard/DashboardCoverage.tsx";
@@ -112,10 +112,11 @@ export const DashboardPage: React.FC = () => {
           onRetry={() => riskAnalyticsQuery.refetch()}
         />
 
-        {/* "What Needs Attention": Authoritative Project Risk Ranking Queue */}
-        <DashboardAttentionPanel
+        {/* Early Warning / Investigation Signals Layer (PR-12) */}
+        <DashboardEarlyWarning
           projects={attentionQuery.data?.top_risk_projects}
           evaluationMonth={riskEvalMonth}
+          activeRegimes={riskAnalyticsQuery.data?.regime_breakdown?.map((r) => r.regime)}
           isLoading={attentionQuery.isLoading}
           isError={attentionQuery.isError}
           error={attentionQuery.error}
