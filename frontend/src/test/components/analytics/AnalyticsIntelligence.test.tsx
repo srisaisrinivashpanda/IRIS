@@ -554,8 +554,8 @@ describe("PR-13: Analytics Intelligence & Decision Support Layer", () => {
     );
   });
 
-  it("NAVIGATION: provides deep links to Intelligence Terminal and Project Detail", () => {
-    render(
+  it("NAVIGATION: strictly complies with navigation contract without inventing /intelligence/projects", () => {
+    const { container } = render(
       <MemoryRouter>
         <AnalyticsIntelligence
           overview={mockOverview}
@@ -565,14 +565,25 @@ describe("PR-13: Analytics Intelligence & Decision Support Layer", () => {
       </MemoryRouter>
     );
 
+    // General intelligence terminal link: /intelligence
     const intelLink = screen.getByTestId("link-intelligence-terminal");
     expect(intelLink).toHaveAttribute("href", "/intelligence");
 
+    // Project-specific detail link: /projects/{projectCode}
     const projLink = screen.getByTestId("link-project-detail");
     expect(projLink).toHaveAttribute("href", "/projects/100001");
 
+    // Project risk investigation link: /intelligence?project={projectCode}
     const projIntelLink = screen.getByTestId("link-project-intel");
     expect(projIntelLink).toHaveAttribute("href", "/intelligence?project=100001");
+
+    // Explicitly verify no element navigates to or references /intelligence/projects
+    const allLinks = Array.from(container.querySelectorAll("a"));
+    const hrefs = allLinks.map((a) => a.getAttribute("href") || "");
+    expect(hrefs.some((h) => h.includes("/intelligence/projects"))).toBe(false);
+    for (const href of hrefs) {
+      expect(href).not.toContain("/intelligence/projects");
+    }
   });
 
   it("CROSS-FILTERING: triggers toggleFilter on sector button click", () => {

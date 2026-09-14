@@ -91,7 +91,7 @@ export const AnalyticsRiskIntelligence: React.FC<AnalyticsRiskIntelligenceProps>
           <span className="analytics-intel-badge risk">DECISION SUPPORT & RISK SERVING</span>
           <h4 className="analytics-intel-card-title">{targetLabel}</h4>
         </div>
-        <div className="analytics-intel-target-chip font-mono" data-testid="served-target-chip">
+        <div className="analytics-intel-target-chip font-mono" data-testid="served-target-chip" data-target={targetId}>
           Operational Horizon: 3-Month Schedule Extension
         </div>
       </div>
