@@ -23,6 +23,7 @@ import { AnalyticsFinancials } from "@/components/analytics/AnalyticsFinancials.
 import { AnalyticsProgress } from "@/components/analytics/AnalyticsProgress.tsx";
 import { AnalyticsRisk } from "@/components/analytics/AnalyticsRisk.tsx";
 import { AnalyticsCoverage } from "@/components/analytics/AnalyticsCoverage.tsx";
+import { AnalyticsIntelligence } from "@/components/analytics/AnalyticsIntelligence.tsx";
 import { usePageEnter } from "@/lib/motion/useMotion.ts";
 
 export const AnalyticsPage: React.FC = () => {
@@ -166,6 +167,37 @@ export const AnalyticsPage: React.FC = () => {
         isError={isOverviewError}
         error={overviewError}
         onRetry={() => refetchOverview()}
+      />
+
+      {/* Analytics Intelligence & Decision Support Layer (PR-13) */}
+      <AnalyticsIntelligence
+        overview={overviewData}
+        trends={trendsData}
+        geography={geographyData}
+        sectors={sectorsData}
+        agencies={agenciesData}
+        financials={financialsData}
+        progress={progressData}
+        risk={riskData}
+        globalFilters={globalFilters}
+        riskFilters={riskFilters}
+        setFilter={setFilter}
+        clearFilter={clearFilter}
+        clearAllFilters={clearAllFilters}
+        toggleFilter={toggleFilter}
+        isLoading={isOverviewLoading && isTrendsLoading && isRiskLoading}
+        isError={isOverviewError && isTrendsError}
+        error={overviewError || trendsError}
+        onRetry={() => {
+          refetchOverview();
+          refetchTrends();
+          refetchGeography();
+          refetchSectors();
+          refetchAgencies();
+          refetchFinancials();
+          refetchProgress();
+          refetchRisk();
+        }}
       />
 
       {/* Temporal Trends */}
