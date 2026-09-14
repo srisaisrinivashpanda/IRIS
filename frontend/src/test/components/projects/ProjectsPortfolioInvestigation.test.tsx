@@ -16,9 +16,6 @@ import { render, screen, waitFor, fireEvent, within } from "@testing-library/rea
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ProjectsPage } from "../../../pages/ProjectsPage.tsx";
 import { ProjectsInvestigationTable } from "../../../components/projects/ProjectsInvestigationTable.tsx";
-import { ProjectInspectionDrawer } from "../../../components/projects/ProjectInspectionDrawer.tsx";
-import { ProjectsPortfolioSummary } from "../../../components/projects/ProjectsPortfolioSummary.tsx";
-import { ProjectSearch } from "../../../components/projects/ProjectSearch.tsx";
 import { ProjectsEvidenceAndLimitations } from "../../../components/projects/ProjectsEvidenceAndLimitations.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
