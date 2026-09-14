@@ -236,7 +236,7 @@ export interface TargetRegistryListResponse {
 
 
 export interface RiskSummaryQueryParams {
-  report_month: string;
+  report_month?: string;
   regime?: Regime;
   top_n?: number;
   sector?: string;
