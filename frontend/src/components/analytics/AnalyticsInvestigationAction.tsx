@@ -24,6 +24,7 @@ export interface AnalyticsInvestigationActionProps {
   title?: string;
   variant?: "table-btn" | "pill-btn" | "card-link" | "inline";
   dataTestId?: string;
+  transferable?: boolean;
 }
 
 export const AnalyticsInvestigationAction: React.FC<AnalyticsInvestigationActionProps> = ({
@@ -34,7 +35,12 @@ export const AnalyticsInvestigationAction: React.FC<AnalyticsInvestigationAction
   title,
   variant = "table-btn",
   dataTestId = "analytics-investigate-projects-btn",
+  transferable = true,
 }) => {
+  if (transferable === false) {
+    return null;
+  }
+
   const classNameMap = {
     "table-btn": "analytics-investigate-btn",
     "pill-btn": "analytics-investigate-pill",
@@ -43,6 +49,7 @@ export const AnalyticsInvestigationAction: React.FC<AnalyticsInvestigationAction
   };
 
   const appliedClass = classNameMap[variant] || "analytics-investigate-btn";
+  const defaultTitle = "Investigate compatible project population under supported Projects filter contract";
 
   return (
     <Link
@@ -50,7 +57,9 @@ export const AnalyticsInvestigationAction: React.FC<AnalyticsInvestigationAction
       state={context}
       className={appliedClass}
       aria-label={ariaLabel || label}
-      title={title || label}
+      title={title || defaultTitle}
+      role="button"
+      tabIndex={0}
       data-testid={dataTestId}
     >
       <span>{label}</span>
