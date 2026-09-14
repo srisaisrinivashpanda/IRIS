@@ -387,7 +387,7 @@ describe("IRIS Cross-Page Integration & Full Navigation Graph", () => {
     renderAppAt("/analytics");
 
     await waitFor(() => {
-      expect(screen.getByText("UNDERSTAND HOW THE PORTFOLIO MOVES.")).toBeInTheDocument();
+      expect(screen.getByText("PORTFOLIO INTELLIGENCE & CROSS-FILTERING")).toBeInTheDocument();
     });
 
     const analyticsNav = screen.getByRole("link", { name: "02. ANALYTICS" });
