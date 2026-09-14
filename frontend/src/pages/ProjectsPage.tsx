@@ -1,22 +1,76 @@
-import React, { useState } from "react";
+/**
+ * Projects Page (PR-14)
+ * Upgraded Project Portfolio Investigation Workspace.
+ * 
+ * Strict Governance & Contracts:
+ * - URL as single source of truth via useSearchParams() (Correction 1).
+ * - Only authoritative backend query parameters are synchronized.
+ * - NO N+1 risk requests in project table (Correction 2).
+ * - Ministry filter rendered conditionally based on authoritative options (Correction 3).
+ * - Financial observation semantics: values rendered directly without browser recomputation (Correction 4).
+ * - Discloses 7 explicit methodological limitations.
+ */
+
+import React, { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProjects, fetchFilterOptions } from "@/api/projects.ts";
 import { fetchDatasetInfo } from "@/api/system.ts";
-import { ProjectSearch, Filters } from "@/components/projects/ProjectSearch.tsx";
+import { fetchRiskOptions } from "@/api/risk.ts";
+import { ProjectSearch, type Filters } from "@/components/projects/ProjectSearch.tsx";
 import { PortfolioSnapshot } from "@/components/projects/PortfolioSnapshot.tsx";
 import { ProjectTable } from "@/components/projects/ProjectTable.tsx";
 import { ProjectPagination } from "@/components/projects/ProjectPagination.tsx";
 import { ProjectInspectionDrawer } from "@/components/projects/ProjectInspectionDrawer.tsx";
-import type { ProjectSummaryItem } from "@/types/project.ts";
+import { ProjectsEvidenceAndLimitations } from "@/components/projects/ProjectsEvidenceAndLimitations.tsx";
+import type { ProjectSummaryItem, SortByFields, SortOrder, ProjectListQueryParams } from "@/types/project.ts";
 import { ShieldCheck, AlertCircle } from "lucide-react";
 import { usePageEnter } from "@/lib/motion/useMotion.ts";
 
 export const ProjectsPage: React.FC = () => {
   const containerRef = usePageEnter<HTMLDivElement>();
-  const [filters, setFilters] = useState<Filters>({});
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [inspectingProject, setInspectingProject] = useState<ProjectSummaryItem | null>(null);
   const pageSize = 25;
+
+  // Derive authoritative filter parameters strictly from URL query parameters (Correction 1)
+  const filters: Filters = useMemo(() => {
+    return {
+      search: searchParams.get("search") || undefined,
+      project_code: searchParams.get("project_code") || undefined,
+      sector: searchParams.get("sector") || undefined,
+      agency: searchParams.get("agency") || undefined,
+      state: searchParams.get("state") || undefined,
+      ministry: searchParams.get("ministry") || undefined,
+      report_month: searchParams.get("report_month") || undefined,
+    };
+  }, [searchParams]);
+
+  const rawPage = parseInt(searchParams.get("page") || "1", 10);
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+
+  const rawSortBy = searchParams.get("sort_by") as SortByFields | null;
+  const sortBy: SortByFields = rawSortBy || "report_month";
+
+  const rawSortOrder = searchParams.get("sort_order") as SortOrder | null;
+  const sortOrder: SortOrder = rawSortOrder === "asc" ? "asc" : "desc";
+
+  // Build authoritative query payload with only supported backend parameters
+  const queryPayload: ProjectListQueryParams = useMemo(() => {
+    return {
+      page,
+      page_size: pageSize,
+      project_code: filters.project_code,
+      report_month: filters.report_month,
+      sector: filters.sector,
+      state: filters.state,
+      agency: filters.agency,
+      ministry: filters.ministry,
+      search: filters.search,
+      sort_by: sortBy,
+      sort_order: sortOrder,
+    };
+  }, [page, pageSize, filters, sortBy, sortOrder]);
 
   const {
     data: projectsData,
@@ -25,8 +79,8 @@ export const ProjectsPage: React.FC = () => {
     error: projectsError,
     refetch: refetchProjects,
   } = useQuery({
-    queryKey: ["projects", filters, page],
-    queryFn: () => fetchProjects({ ...filters, page, page_size: pageSize }),
+    queryKey: ["projects", queryPayload],
+    queryFn: () => fetchProjects(queryPayload),
   });
 
   const { data: systemInfo, isLoading: isSystemLoading } = useQuery({
@@ -39,14 +93,56 @@ export const ProjectsPage: React.FC = () => {
     queryFn: fetchFilterOptions,
   });
 
+  const { data: riskOptions } = useQuery({
+    queryKey: ["riskOptions"],
+    queryFn: () => fetchRiskOptions(),
+    staleTime: 60_000,
+  });
+
+  // URL state synchronizers: only supported parameters are committed to URL
   const handleFilterChange = (newFilters: Filters) => {
-    setFilters(newFilters);
-    setPage(1);
+    const next = new URLSearchParams();
+    if (newFilters.search) next.set("search", newFilters.search);
+    if (newFilters.project_code) next.set("project_code", newFilters.project_code);
+    if (newFilters.sector) next.set("sector", newFilters.sector);
+    if (newFilters.agency) next.set("agency", newFilters.agency);
+    if (newFilters.state) next.set("state", newFilters.state);
+    if (newFilters.ministry) next.set("ministry", newFilters.ministry);
+    if (newFilters.report_month) next.set("report_month", newFilters.report_month);
+
+    if (sortBy && sortBy !== "report_month") next.set("sort_by", sortBy);
+    if (sortOrder && sortOrder !== "desc") next.set("sort_order", sortOrder);
+    // Page resets to 1 on filter changes
+    setSearchParams(next, { replace: true });
   };
 
   const handleResetFilters = () => {
-    setFilters({});
-    setPage(1);
+    const next = new URLSearchParams();
+    if (sortBy && sortBy !== "report_month") next.set("sort_by", sortBy);
+    if (sortOrder && sortOrder !== "desc") next.set("sort_order", sortOrder);
+    setSearchParams(next, { replace: true });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const next = new URLSearchParams(searchParams);
+    if (newPage > 1) {
+      next.set("page", String(newPage));
+    } else {
+      next.delete("page");
+    }
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleSortChange = (field: SortByFields) => {
+    const next = new URLSearchParams(searchParams);
+    if (sortBy === field) {
+      next.set("sort_order", sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      next.set("sort_by", field);
+      next.set("sort_order", "desc");
+    }
+    next.delete("page"); // reset to page 1 on sort change
+    setSearchParams(next, { replace: true });
   };
 
   const total = projectsData?.total ?? 0;
@@ -67,6 +163,8 @@ export const ProjectsPage: React.FC = () => {
   const observationsCount = systemInfo?.row_count != null
     ? systemInfo.row_count.toLocaleString()
     : "—";
+
+  const activeRiskMonth = riskOptions?.default_report_month || "2026-07";
 
   return (
     <div style={{ minHeight: "calc(100vh - 64px)", display: "flex", flexDirection: "column", width: "100%" }}>
@@ -105,7 +203,11 @@ export const ProjectsPage: React.FC = () => {
         <PortfolioSnapshot
           systemInfo={systemInfo}
           options={filterOptions}
+          filters={filters}
+          matchingCount={total}
+          riskEvaluationMonth={activeRiskMonth}
           isLoading={isSystemLoading || isOptionsLoading}
+          onResetFilters={handleResetFilters}
         />
 
         {/* Project Search & Filter Command Bar */}
@@ -153,6 +255,9 @@ export const ProjectsPage: React.FC = () => {
               <ProjectTable
                 projects={projectsData?.items || []}
                 isLoading={isProjectsLoading}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortChange={handleSortChange}
                 onInspect={(project) => setInspectingProject(project)}
                 onResetFilters={handleResetFilters}
               />
@@ -161,12 +266,15 @@ export const ProjectsPage: React.FC = () => {
                 pageSize={pageSize}
                 total={total}
                 totalPages={totalPages}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
                 entityName="MATCHING OBSERVATIONS"
               />
             </>
           )}
         </section>
+
+        {/* Explicit Methodological Disclosures */}
+        <ProjectsEvidenceAndLimitations />
       </div>
 
       {/* Project Quick Inspection Console Drawer */}

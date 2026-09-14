@@ -6,6 +6,7 @@ import type { FilterOptionsResponse } from "@/types/project.ts";
 
 export interface Filters {
   search?: string;
+  project_code?: string;
   sector?: string;
   agency?: string;
   state?: string;
@@ -75,6 +76,7 @@ export const ProjectSearch: React.FC<ProjectSearchProps> = ({
     filters.state ||
     filters.ministry ||
     filters.report_month ||
+    filters.project_code ||
     filters.search
   );
 
@@ -182,27 +184,29 @@ export const ProjectSearch: React.FC<ProjectSearchProps> = ({
           </span>
         </div>
 
-        {/* Ministry Select */}
-        <div className="filter-select-wrapper">
-          <select
-            id="project-ministry-select"
-            name="ministry"
-            aria-label="Filter by ministry"
-            className="filter-select"
-            value={filters.ministry || ""}
-            onChange={(e) => handleChange("ministry", e.target.value)}
-          >
-            <option value="">MINISTRY (ALL)</option>
-            {options?.ministries?.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <span className="filter-select-arrow">
-            <ChevronDown size={13} />
-          </span>
-        </div>
+        {/* Ministry Select — Rendered strictly when authoritative contract exposes non-empty options */}
+        {options?.ministries && options.ministries.length > 0 && (
+          <div className="filter-select-wrapper">
+            <select
+              id="project-ministry-select"
+              name="ministry"
+              aria-label="Filter by ministry"
+              className="filter-select"
+              value={filters.ministry || ""}
+              onChange={(e) => handleChange("ministry", e.target.value)}
+            >
+              <option value="">MINISTRY (ALL)</option>
+              {options.ministries.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+            <span className="filter-select-arrow">
+              <ChevronDown size={13} />
+            </span>
+          </div>
+        )}
 
         {/* Report Period Select */}
         <div className="filter-select-wrapper">
