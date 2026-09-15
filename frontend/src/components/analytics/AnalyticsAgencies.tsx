@@ -8,10 +8,12 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import type { AgenciesResponse } from "@/types/analytics.ts";
+import type { AgenciesResponse, GlobalAnalyticsFilters, RiskAnalyticsFilters } from "@/types/analytics.ts";
 import { IrisChartTooltip, type IrisTooltipItem } from "@/components/common/charts/IrisChartTooltip.tsx";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner.tsx";
 import { AlertTriangle, Building2, Table as TableIcon } from "lucide-react";
+import { buildInvestigationPackage } from "@/utils/analyticsProjectNavigation.ts";
+import { AnalyticsInvestigationAction } from "./AnalyticsInvestigationAction.tsx";
 
 interface AnalyticsAgenciesProps {
   data?: AgenciesResponse;
@@ -21,6 +23,8 @@ interface AnalyticsAgenciesProps {
   isError: boolean;
   error?: Error | null;
   onRetry?: () => void;
+  globalFilters?: GlobalAnalyticsFilters;
+  riskFilters?: RiskAnalyticsFilters;
 }
 
 export const AnalyticsAgencies: React.FC<AnalyticsAgenciesProps> = ({
@@ -31,6 +35,8 @@ export const AnalyticsAgencies: React.FC<AnalyticsAgenciesProps> = ({
   isError,
   error,
   onRetry,
+  globalFilters,
+  riskFilters,
 }) => {
   const [showTable, setShowTable] = useState(false);
 
@@ -122,17 +128,27 @@ export const AnalyticsAgencies: React.FC<AnalyticsAgenciesProps> = ({
 
         <div className="analytics-view-controls">
           {selectedAgency && (
-            <span className="analytics-filter-active-pill">
-              FILTER: {selectedAgency}
-              <button
-                type="button"
-                className="analytics-filter-clear-pill-btn"
-                onClick={() => onToggleAgency(selectedAgency)}
-                aria-label={`Clear ${selectedAgency} filter`}
-              >
-                ×
-              </button>
-            </span>
+            <>
+              <span className="analytics-filter-active-pill">
+                FILTER: {selectedAgency}
+                <button
+                  type="button"
+                  className="analytics-filter-clear-pill-btn"
+                  onClick={() => onToggleAgency(selectedAgency)}
+                  aria-label={`Clear ${selectedAgency} filter`}
+                >
+                  ×
+                </button>
+              </span>
+              <AnalyticsInvestigationAction
+                url={buildInvestigationPackage({ globalFilters, riskFilters, overrideAgency: selectedAgency }).url}
+                context={buildInvestigationPackage({ globalFilters, riskFilters, overrideAgency: selectedAgency }).context}
+                label="INVESTIGATE AGENCY"
+                variant="pill-btn"
+                ariaLabel={`Investigate compatible projects for ${selectedAgency}`}
+                dataTestId="investigate-selected-agency"
+              />
+            </>
           )}
           <button
             type="button"
@@ -166,6 +182,11 @@ export const AnalyticsAgencies: React.FC<AnalyticsAgenciesProps> = ({
             <tbody>
               {items.map((row) => {
                 const isSelected = selectedAgency?.toUpperCase() === row.agency.toUpperCase();
+                const nav = buildInvestigationPackage({
+                  globalFilters,
+                  riskFilters,
+                  overrideAgency: row.agency,
+                });
                 return (
                   <tr key={row.agency} className={isSelected ? "analytics-table-row-selected" : ""}>
                     <td className="monospace font-bold" title={row.agency}>{row.agency}</td>
@@ -173,14 +194,23 @@ export const AnalyticsAgencies: React.FC<AnalyticsAgenciesProps> = ({
                     <td>{row.observation_count.toLocaleString()}</td>
                     <td>{row.total_cumulative_expenditure != null ? row.total_cumulative_expenditure.toFixed(2) : "—"}</td>
                     <td>
-                      <button
-                        type="button"
-                        className="analytics-table-action-btn"
-                        onClick={() => onToggleAgency(row.agency)}
-                        aria-pressed={isSelected}
-                      >
-                        {isSelected ? "REMOVE FILTER" : "FILTER BY AGENCY"}
-                      </button>
+                      <div className="analytics-table-actions-cell">
+                        <button
+                          type="button"
+                          className="analytics-table-action-btn"
+                          onClick={() => onToggleAgency(row.agency)}
+                          aria-pressed={isSelected}
+                        >
+                          {isSelected ? "REMOVE FILTER" : "FILTER BY AGENCY"}
+                        </button>
+                        <AnalyticsInvestigationAction
+                          url={nav.url}
+                          context={nav.context}
+                          label="INVESTIGATE PROJECTS"
+                          ariaLabel={`Investigate compatible projects for agency ${row.agency}`}
+                          dataTestId={`investigate-agency-${row.agency}`}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

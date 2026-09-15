@@ -1,7 +1,8 @@
-import React from "react";
-import type { ProgressResponse } from "@/types/analytics.ts";
+import type { ProgressResponse, GlobalAnalyticsFilters, RiskAnalyticsFilters } from "@/types/analytics.ts";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner.tsx";
 import { AlertTriangle, Activity } from "lucide-react";
+import { buildInvestigationPackage } from "@/utils/analyticsProjectNavigation.ts";
+import { AnalyticsInvestigationAction } from "./AnalyticsInvestigationAction.tsx";
 
 interface AnalyticsProgressProps {
   data?: ProgressResponse;
@@ -9,6 +10,8 @@ interface AnalyticsProgressProps {
   isError: boolean;
   error?: Error | null;
   onRetry?: () => void;
+  globalFilters?: GlobalAnalyticsFilters;
+  riskFilters?: RiskAnalyticsFilters;
 }
 
 export const AnalyticsProgress: React.FC<AnalyticsProgressProps> = ({
@@ -17,6 +20,8 @@ export const AnalyticsProgress: React.FC<AnalyticsProgressProps> = ({
   isError,
   error,
   onRetry,
+  globalFilters,
+  riskFilters,
 }) => {
   if (isLoading) {
     return (
@@ -172,21 +177,38 @@ export const AnalyticsProgress: React.FC<AnalyticsProgressProps> = ({
                       <th scope="col">MEAN PROGRESS (%)</th>
                       <th scope="col">REPORTING ROWS</th>
                       <th scope="col">MISSING ROWS</th>
+                      <th scope="col">ACTION</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data.by_sector.map((s) => (
-                      <tr key={s.sector}>
-                        <td className="monospace font-bold">{s.sector}</td>
-                        <td className="monospace">
-                          {s.mean_physical_progress != null
-                            ? `${s.mean_physical_progress.toFixed(1)}%`
-                            : "Unavailable"}
-                        </td>
-                        <td>{s.reporting_count.toLocaleString()}</td>
-                        <td>{s.missing_count.toLocaleString()}</td>
-                      </tr>
-                    ))}
+                    {data.by_sector.map((s) => {
+                      const nav = buildInvestigationPackage({
+                        globalFilters,
+                        riskFilters,
+                        overrideSector: s.sector,
+                      });
+                      return (
+                        <tr key={s.sector}>
+                          <td className="monospace font-bold">{s.sector}</td>
+                          <td className="monospace">
+                            {s.mean_physical_progress != null
+                              ? `${s.mean_physical_progress.toFixed(1)}%`
+                              : "Unavailable"}
+                          </td>
+                          <td>{s.reporting_count.toLocaleString()}</td>
+                          <td>{s.missing_count.toLocaleString()}</td>
+                          <td>
+                            <AnalyticsInvestigationAction
+                              url={nav.url}
+                              context={nav.context}
+                              label="INVESTIGATE SECTOR"
+                              ariaLabel={`Investigate compatible projects in ${s.sector} sector`}
+                              dataTestId={`progress-investigate-sector-${s.sector}`}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

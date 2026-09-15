@@ -10,10 +10,12 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import type { TrendsResponse } from "@/types/analytics.ts";
+import type { TrendsResponse, GlobalAnalyticsFilters, RiskAnalyticsFilters } from "@/types/analytics.ts";
 import { IrisChartTooltip, type IrisTooltipItem } from "@/components/common/charts/IrisChartTooltip.tsx";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner.tsx";
 import { AlertTriangle, TrendingUp, Table as TableIcon } from "lucide-react";
+import { buildInvestigationPackage } from "@/utils/analyticsProjectNavigation.ts";
+import { AnalyticsInvestigationAction } from "./AnalyticsInvestigationAction.tsx";
 
 interface AnalyticsTrendsProps {
   data?: TrendsResponse;
@@ -21,6 +23,8 @@ interface AnalyticsTrendsProps {
   isError: boolean;
   error?: Error | null;
   onRetry?: () => void;
+  globalFilters?: GlobalAnalyticsFilters;
+  riskFilters?: RiskAnalyticsFilters;
 }
 
 type TrendViewMode = "financial" | "volume" | "progress_risk";
@@ -31,6 +35,8 @@ export const AnalyticsTrends: React.FC<AnalyticsTrendsProps> = ({
   isError,
   error,
   onRetry,
+  globalFilters,
+  riskFilters,
 }) => {
   const [viewMode, setViewMode] = useState<TrendViewMode>("financial");
   const [showTable, setShowTable] = useState(false);
@@ -200,21 +206,38 @@ export const AnalyticsTrends: React.FC<AnalyticsTrendsProps> = ({
                 <th scope="col">REVISED COST (₹ CR)</th>
                 <th scope="col">MEAN PROGRESS (%)</th>
                 <th scope="col">CALIBRATED RISK (%)</th>
+                <th scope="col">ACTION</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((row) => (
-                <tr key={row.report_month}>
-                  <td className="monospace font-bold">{row.report_month}</td>
-                  <td>{row.observation_count.toLocaleString()}</td>
-                  <td>{row.unique_project_count.toLocaleString()}</td>
-                  <td>{row.total_cumulative_expenditure != null ? row.total_cumulative_expenditure.toFixed(2) : "—"}</td>
-                  <td>{row.total_original_cost != null ? row.total_original_cost.toFixed(2) : "—"}</td>
-                  <td>{row.total_revised_cost != null ? row.total_revised_cost.toFixed(2) : "—"}</td>
-                  <td>{row.average_physical_progress != null ? `${row.average_physical_progress.toFixed(1)}%` : "—"}</td>
-                  <td>{row.average_risk_probability != null ? `${(row.average_risk_probability * 100).toFixed(1)}%` : "—"}</td>
-                </tr>
-              ))}
+              {items.map((row) => {
+                const nav = buildInvestigationPackage({
+                  globalFilters,
+                  riskFilters,
+                  overrideReportMonth: row.report_month,
+                });
+                return (
+                  <tr key={row.report_month}>
+                    <td className="monospace font-bold">{row.report_month}</td>
+                    <td>{row.observation_count.toLocaleString()}</td>
+                    <td>{row.unique_project_count.toLocaleString()}</td>
+                    <td>{row.total_cumulative_expenditure != null ? row.total_cumulative_expenditure.toFixed(2) : "—"}</td>
+                    <td>{row.total_original_cost != null ? row.total_original_cost.toFixed(2) : "—"}</td>
+                    <td>{row.total_revised_cost != null ? row.total_revised_cost.toFixed(2) : "—"}</td>
+                    <td>{row.average_physical_progress != null ? `${row.average_physical_progress.toFixed(1)}%` : "—"}</td>
+                    <td>{row.average_risk_probability != null ? `${(row.average_risk_probability * 100).toFixed(1)}%` : "—"}</td>
+                    <td>
+                      <AnalyticsInvestigationAction
+                        url={nav.url}
+                        context={nav.context}
+                        label="INVESTIGATE MONTH"
+                        ariaLabel={`Investigate compatible projects for month ${row.report_month}`}
+                        dataTestId={`investigate-month-${row.report_month}`}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

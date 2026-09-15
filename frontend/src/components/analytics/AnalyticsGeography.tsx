@@ -8,10 +8,12 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import type { GeographyResponse } from "@/types/analytics.ts";
+import type { GeographyResponse, GlobalAnalyticsFilters, RiskAnalyticsFilters } from "@/types/analytics.ts";
 import { IrisChartTooltip, type IrisTooltipItem } from "@/components/common/charts/IrisChartTooltip.tsx";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner.tsx";
 import { AlertTriangle, MapPin, Table as TableIcon } from "lucide-react";
+import { buildInvestigationPackage } from "@/utils/analyticsProjectNavigation.ts";
+import { AnalyticsInvestigationAction } from "./AnalyticsInvestigationAction.tsx";
 
 interface AnalyticsGeographyProps {
   data?: GeographyResponse;
@@ -21,6 +23,8 @@ interface AnalyticsGeographyProps {
   isError: boolean;
   error?: Error | null;
   onRetry?: () => void;
+  globalFilters?: GlobalAnalyticsFilters;
+  riskFilters?: RiskAnalyticsFilters;
 }
 
 export const AnalyticsGeography: React.FC<AnalyticsGeographyProps> = ({
@@ -31,6 +35,8 @@ export const AnalyticsGeography: React.FC<AnalyticsGeographyProps> = ({
   isError,
   error,
   onRetry,
+  globalFilters,
+  riskFilters,
 }) => {
   const [showTable, setShowTable] = useState(false);
 
@@ -118,17 +124,27 @@ export const AnalyticsGeography: React.FC<AnalyticsGeographyProps> = ({
 
         <div className="analytics-view-controls">
           {selectedState && (
-            <span className="analytics-filter-active-pill">
-              FILTER: {selectedState}
-              <button
-                type="button"
-                className="analytics-filter-clear-pill-btn"
-                onClick={() => onToggleState(selectedState)}
-                aria-label={`Clear ${selectedState} filter`}
-              >
-                ×
-              </button>
-            </span>
+            <>
+              <span className="analytics-filter-active-pill">
+                FILTER: {selectedState}
+                <button
+                  type="button"
+                  className="analytics-filter-clear-pill-btn"
+                  onClick={() => onToggleState(selectedState)}
+                  aria-label={`Clear ${selectedState} filter`}
+                >
+                  ×
+                </button>
+              </span>
+              <AnalyticsInvestigationAction
+                url={buildInvestigationPackage({ globalFilters, riskFilters, overrideState: selectedState }).url}
+                context={buildInvestigationPackage({ globalFilters, riskFilters, overrideState: selectedState }).context}
+                label="INVESTIGATE STATE"
+                variant="pill-btn"
+                ariaLabel={`Investigate compatible projects in ${selectedState}`}
+                dataTestId="investigate-selected-state"
+              />
+            </>
           )}
           <button
             type="button"
@@ -164,6 +180,11 @@ export const AnalyticsGeography: React.FC<AnalyticsGeographyProps> = ({
             <tbody>
               {items.map((row) => {
                 const isSelected = selectedState?.toUpperCase() === row.state.toUpperCase();
+                const nav = buildInvestigationPackage({
+                  globalFilters,
+                  riskFilters,
+                  overrideState: row.state,
+                });
                 return (
                   <tr key={row.state} className={isSelected ? "analytics-table-row-selected" : ""}>
                     <td className="monospace font-bold">{row.state}</td>
@@ -171,14 +192,23 @@ export const AnalyticsGeography: React.FC<AnalyticsGeographyProps> = ({
                     <td>{row.observation_count.toLocaleString()}</td>
                     <td>{row.total_cumulative_expenditure != null ? row.total_cumulative_expenditure.toFixed(2) : "—"}</td>
                     <td>
-                      <button
-                        type="button"
-                        className="analytics-table-action-btn"
-                        onClick={() => onToggleState(row.state)}
-                        aria-pressed={isSelected}
-                      >
-                        {isSelected ? "REMOVE FILTER" : "FILTER BY STATE"}
-                      </button>
+                      <div className="analytics-table-actions-cell">
+                        <button
+                          type="button"
+                          className="analytics-table-action-btn"
+                          onClick={() => onToggleState(row.state)}
+                          aria-pressed={isSelected}
+                        >
+                          {isSelected ? "REMOVE FILTER" : "FILTER BY STATE"}
+                        </button>
+                        <AnalyticsInvestigationAction
+                          url={nav.url}
+                          context={nav.context}
+                          label="INVESTIGATE PROJECTS"
+                          ariaLabel={`Investigate compatible projects in state ${row.state}`}
+                          dataTestId={`investigate-state-${row.state}`}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

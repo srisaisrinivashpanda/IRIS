@@ -14,7 +14,11 @@ import type {
   OverviewResponse,
   SectorGroup,
   SectorsResponse,
+  GlobalAnalyticsFilters,
+  RiskAnalyticsFilters,
 } from "@/types/analytics.ts";
+import { buildInvestigationPackage } from "@/utils/analyticsProjectNavigation.ts";
+import { AnalyticsInvestigationAction } from "./AnalyticsInvestigationAction.tsx";
 
 interface AnalyticsConcentrationInsightsProps {
   geography?: GeographyResponse;
@@ -28,6 +32,8 @@ interface AnalyticsConcentrationInsightsProps {
   onToggleSector?: (sector: string) => void;
   onToggleAgency?: (agency: string) => void;
   isLoading?: boolean;
+  globalFilters?: GlobalAnalyticsFilters;
+  riskFilters?: RiskAnalyticsFilters;
 }
 
 export const AnalyticsConcentrationInsights: React.FC<AnalyticsConcentrationInsightsProps> = ({
@@ -42,6 +48,8 @@ export const AnalyticsConcentrationInsights: React.FC<AnalyticsConcentrationInsi
   onToggleSector,
   onToggleAgency,
   isLoading = false,
+  globalFilters,
+  riskFilters,
 }) => {
   if (isLoading) {
     return (
@@ -178,6 +186,16 @@ export const AnalyticsConcentrationInsights: React.FC<AnalyticsConcentrationInsi
                     </span>
                   </div>
                 )}
+                <div style={{ marginTop: "10px" }}>
+                  <AnalyticsInvestigationAction
+                    url={buildInvestigationPackage({ globalFilters, riskFilters, overrideSector: leadSector.sector }).url}
+                    context={buildInvestigationPackage({ globalFilters, riskFilters, overrideSector: leadSector.sector }).context}
+                    label="INVESTIGATE PROJECTS"
+                    variant="card-link"
+                    ariaLabel={`Investigate compatible projects in ${leadSector.sector} sector`}
+                    dataTestId="concentration-investigate-sector"
+                  />
+                </div>
               </div>
             </div>
           ) : (
@@ -237,6 +255,16 @@ export const AnalyticsConcentrationInsights: React.FC<AnalyticsConcentrationInsi
                     {leadAgencyByExp.unique_project_count.toLocaleString()}
                   </span>
                 </div>
+                <div style={{ marginTop: "10px" }}>
+                  <AnalyticsInvestigationAction
+                    url={buildInvestigationPackage({ globalFilters, riskFilters, overrideAgency: leadAgencyByExp.agency }).url}
+                    context={buildInvestigationPackage({ globalFilters, riskFilters, overrideAgency: leadAgencyByExp.agency }).context}
+                    label="INVESTIGATE PROJECTS"
+                    variant="card-link"
+                    ariaLabel={`Investigate compatible projects for agency ${leadAgencyByExp.agency}`}
+                    dataTestId="concentration-investigate-agency"
+                  />
+                </div>
               </div>
             </div>
           ) : (
@@ -295,6 +323,16 @@ export const AnalyticsConcentrationInsights: React.FC<AnalyticsConcentrationInsi
                     </span>
                   </div>
                 )}
+                <div style={{ marginTop: "10px" }}>
+                  <AnalyticsInvestigationAction
+                    url={buildInvestigationPackage({ globalFilters, riskFilters, overrideState: leadState.state }).url}
+                    context={buildInvestigationPackage({ globalFilters, riskFilters, overrideState: leadState.state }).context}
+                    label="INVESTIGATE PROJECTS"
+                    variant="card-link"
+                    ariaLabel={`Investigate compatible projects in state ${leadState.state}`}
+                    dataTestId="concentration-investigate-state"
+                  />
+                </div>
               </div>
             </div>
           ) : (
