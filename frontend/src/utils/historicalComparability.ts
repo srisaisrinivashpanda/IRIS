@@ -35,6 +35,24 @@ export interface MovementResult {
 }
 
 /**
+ * Checks if two observations are immediately adjacent in the chronological evaluation sequence.
+ */
+export function areObservationsAdjacent(
+  history: RiskObservationLike[],
+  aMonth: string,
+  bMonth: string
+): boolean {
+  if (!aMonth || !bMonth || aMonth === bMonth) return false;
+  const uniqueMonths = Array.from(
+    new Set([...history.map((h) => h.report_month), aMonth, bMonth])
+  ).sort();
+  const idxA = uniqueMonths.indexOf(aMonth);
+  const idxB = uniqueMonths.indexOf(bMonth);
+  if (idxA === -1 || idxB === -1) return false;
+  return Math.abs(idxA - idxB) === 1;
+}
+
+/**
  * Validates semantic comparability between two risk evaluations.
  * 
  * CRITICAL RULE:
