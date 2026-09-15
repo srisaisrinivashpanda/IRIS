@@ -32,7 +32,8 @@ export const IntelligenceNavigation: React.FC<IntelligenceNavigationProps> = ({
 
   // Check for Analytics context from PR-15 navigation state or query parameters
   const navState = location.state as AnalyticsInvestigationContext | undefined;
-  const isFromAnalyticsState = navState?.source === "analytics";
+  const isFromAnalyticsState =
+    navState?.source === "analytics" || Boolean((navState as any)?.analyticsUrl);
   const isFromAnalyticsQuery =
     searchParams.get("source") === "analytics" || searchParams.get("from") === "analytics";
   const hasAnalyticsContext = isFromAnalyticsState || isFromAnalyticsQuery;
@@ -50,18 +51,20 @@ export const IntelligenceNavigation: React.FC<IntelligenceNavigationProps> = ({
       aria-label="Intelligence terminal workspace navigation"
     >
       <div className="terminal-navigation-inner">
-        {/* Return to Analytics - conditionally rendered ONLY when Analytics context exists */}
-        {hasAnalyticsContext && (
-          <Link
-            to={analyticsReturnUrl}
-            className="terminal-nav-action secondary analytics-return"
-            aria-label="Return to originating Analytics investigation workspace"
-            data-testid="link-back-to-analytics"
-          >
-            <ArrowLeft size={14} aria-hidden="true" />
-            <span>BACK TO ANALYTICS</span>
-          </Link>
-        )}
+        {/* Return to Analytics */}
+        <Link
+          to={analyticsReturnUrl}
+          className="terminal-nav-action secondary analytics-return"
+          aria-label={
+            hasAnalyticsContext
+              ? "Return to originating Analytics investigation workspace"
+              : "Navigate to Risk Analytics"
+          }
+          data-testid="link-back-to-analytics"
+        >
+          <ArrowLeft size={14} aria-hidden="true" />
+          <span>BACK TO ANALYTICS</span>
+        </Link>
 
         {/* Project Portfolio Navigation */}
         <Link

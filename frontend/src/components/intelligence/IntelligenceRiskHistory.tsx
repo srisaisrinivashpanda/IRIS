@@ -73,6 +73,7 @@ export const IntelligenceRiskHistory: React.FC<IntelligenceRiskHistoryProps> = (
     isModelOrRegime: boolean;
     isCalibration: boolean;
     typeLabel: string;
+    referenceLineLabel: string;
   }> = [];
 
   for (let i = 1; i < sortedHistory.length; i++) {
